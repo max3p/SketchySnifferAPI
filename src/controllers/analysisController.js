@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const cache = require("../config/cache");
 const scraperService = require("../services/scraperService");
+const ruleEngine = require("../services/ruleEngine");
+const RED_FLAGS = require("../config/redFlags");
 
 // POST /api/analyses handler
 //
@@ -35,8 +37,20 @@ async function analyzeListing(req, res, next) {
     }
 
     // Step 2: Rule engine (deterministic)
-    // TODO: call ruleEngine.evaluateRules(listingData)
-    const preFlags = [];
+    const preFlags = ruleEngine.evaluateRules(listingData);
+
+    const findings = preFlags.map((preFlag) => {
+      const flagDef = RED_FLAGS.find((f) => f.id === preFlag.id);
+      return {
+        id: preFlag.id,
+        type: "red_flag",
+        header: flagDef ? flagDef.description : preFlag.id,
+        summary: preFlag.evidence,
+        explanation: flagDef ? flagDef.description : preFlag.evidence,
+        severity: preFlag.severity,
+        evidence: [preFlag.evidence],
+      };
+    });
 
     // Step 3: AI analysis (subjective)
     // TODO: call analysisService.analyzeListing(listingData, preFlags, userContext)
@@ -58,9 +72,9 @@ async function analyzeListing(req, res, next) {
       risk: {
         score: 0,
         level: "low",
-        summary: "Analysis not yet implemented.",
+        summary: "Rule-based checks completed. AI analysis not yet implemented.",
       },
-      findings: [],
+      findings,
       reflection_prompts: [],
       quiz: { questions: [] },
     };

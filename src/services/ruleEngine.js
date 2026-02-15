@@ -15,61 +15,271 @@ const RED_FLAGS = require("../config/redFlags");
 
 const RULE_FLAGS = RED_FLAGS.filter((f) => f.engine === "rule");
 
+function getFlag(id) {
+  return RULE_FLAGS.find((f) => f.id === id);
+}
+
+function buildSearchText(listingData) {
+  const parts = [];
+  if (listingData.title) parts.push(listingData.title);
+  if (listingData.description) parts.push(listingData.description);
+  if (parts.length === 0) return null;
+  return parts.join(" ").replace(/[\u2018\u2019\u2032]/g, "'");
+}
+
 // ── Data checks ───────────────────────────────────────────────────
 
-// TODO: Implement — check price.originalAmount vs price.amount, trigger if drop > 60%
-function checkPriceDropExtreme(listingData) {}
+function checkPriceDropExtreme(listingData) {
+  const price = listingData.price;
+  if (!price || typeof price === "string") return null;
+  if (price.originalAmount == null || price.amount == null) return null;
+  if (price.originalAmount <= 0) return null;
 
-// TODO: Implement — check price.amount <= 10
-function checkFreeOrNearFree(listingData) {}
+  const dropPercent = (price.originalAmount - price.amount) / price.originalAmount;
+  if (dropPercent <= 0.6) return null;
 
-// TODO: Implement — check seller.verified === false
-function checkSellerUnverified(listingData) {}
+  const flag = getFlag("price_drop_extreme");
+  const pct = Math.round(dropPercent * 100);
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Price dropped ${pct}% ($${price.originalAmount} \u2192 $${price.amount})`,
+  };
+}
 
-// TODO: Implement — check seller.hasProfilePhoto === false
-function checkSellerNoPhoto(listingData) {}
+function checkFreeOrNearFree(listingData) {
+  const price = listingData.price;
+  if (!price || typeof price === "string") return null;
+  if (price.amount == null) return null;
+  if (price.amount > 10) return null;
 
-// TODO: Implement — check seller.numberOfListings <= 2
-function checkSellerFewListings(listingData) {}
+  const flag = getFlag("free_or_near_free");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Listed at $${price.amount}`,
+  };
+}
 
-// TODO: Implement — check images.count === 0
-function checkNoImages(listingData) {}
+function checkSellerUnverified(listingData) {
+  if (!listingData.seller) return null;
+  if (listingData.seller.verified !== false) return null;
 
-// TODO: Implement — check images.count === 1
-function checkSingleImage(listingData) {}
+  const flag = getFlag("seller_unverified");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: "Seller account is not verified",
+  };
+}
 
-// TODO: Implement — check payment.cashAccepted === false && payment.cashless === true
-function checkNoCashAccepted(listingData) {}
+function checkSellerNoPhoto(listingData) {
+  if (!listingData.seller) return null;
+  if (listingData.seller.hasProfilePhoto !== false) return null;
 
-// TODO: Implement — check listing.endDate - listing.activationDate < 7 days
-function checkShortListingDuration(listingData) {}
+  const flag = getFlag("seller_no_photo");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: "Seller has no profile photo",
+  };
+}
 
-// TODO: Implement — check listing.topAd === true && price.amount < 50
-function checkPromotedCheapItem(listingData) {}
+function checkSellerFewListings(listingData) {
+  if (!listingData.seller) return null;
+  if (listingData.seller.numberOfListings == null) return null;
+  if (listingData.seller.numberOfListings > 2) return null;
+
+  const flag = getFlag("seller_few_listings");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Seller has only ${listingData.seller.numberOfListings} active listing(s)`,
+  };
+}
+
+function checkNoImages(listingData) {
+  if (!listingData.images || listingData.images.count === 0) {
+    const flag = getFlag("no_images");
+    return {
+      id: flag.id,
+      severity: flag.severity,
+      evidence: "No photos provided",
+    };
+  }
+  return null;
+}
+
+function checkSingleImage(listingData) {
+  if (!listingData.images) return null;
+  if (listingData.images.count !== 1) return null;
+
+  const flag = getFlag("single_image");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: "Only 1 photo provided",
+  };
+}
+
+function checkNoCashAccepted(listingData) {
+  if (!listingData.payment) return null;
+  if (listingData.payment.cashless !== true || listingData.payment.cashAccepted !== false) return null;
+
+  const flag = getFlag("no_cash_accepted");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: "Cash not accepted",
+  };
+}
+
+function checkShortListingDuration(listingData) {
+  if (!listingData.listing) return null;
+  if (!listingData.listing.activationDate || !listingData.listing.endDate) return null;
+
+  const start = new Date(listingData.listing.activationDate);
+  const end = new Date(listingData.listing.endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+  const diffMs = end - start;
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  if (diffDays < 0 || diffDays >= 7) return null;
+
+  const flag = getFlag("short_listing_duration");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Listing expires in ${Math.round(diffDays)} days`,
+  };
+}
+
+function checkPromotedCheapItem(listingData) {
+  if (!listingData.listing) return null;
+  if (listingData.listing.topAd !== true) return null;
+
+  const price = listingData.price;
+  if (!price || typeof price === "string") return null;
+  if (price.amount == null || price.amount >= 50) return null;
+
+  const flag = getFlag("promoted_cheap_item");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Top Ad on a $${price.amount} item`,
+  };
+}
 
 // ── Keyword/regex checks ──────────────────────────────────────────
 
-// TODO: Implement — scan description for urgency phrases
-// Keywords: "must sell today", "first come first served", "won't last",
-//           "act fast", "moving sale", "need gone ASAP", "today only",
-//           "serious buyers only"
-function checkUrgencyLanguage(listingData) {}
+function checkUrgencyLanguage(listingData) {
+  const text = buildSearchText(listingData);
+  if (!text) return null;
 
-// TODO: Implement — scan description for off-platform contact patterns
-// Patterns: email addresses (regex), phone numbers (regex),
-//           "text me", "WhatsApp", "call me", "email me",
-//           "DM on Instagram", "Telegram"
-function checkContactOffPlatform(listingData) {}
+  const phrases = [
+    "must sell today",
+    "first come first served",
+    "won't last",
+    "act fast",
+    "moving sale",
+    "need gone",
+    "today only",
+    "serious buyers only",
+    "don't miss out",
+    "selling fast",
+  ];
 
-// TODO: Implement — scan description for deposit/advance payment language
-// Keywords: "deposit required", "e-transfer before", "send payment",
-//           "pay first", "etransfer to hold"
-function checkRequestDeposit(listingData) {}
+  const lower = text.toLowerCase();
+  const matched = phrases.filter((p) => lower.includes(p));
+  if (matched.length === 0) return null;
 
-// TODO: Implement — scan description for unusual payment methods
-// Keywords: "gift card", "crypto", "bitcoin", "wire transfer",
-//           "Western Union", "MoneyGram", "Zelle"
-function checkUnusualPaymentMethod(listingData) {}
+  const flag = getFlag("urgency_language");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Urgency language detected: "${matched.join('", "')}"`,
+  };
+}
+
+function checkContactOffPlatform(listingData) {
+  const text = buildSearchText(listingData);
+  if (!text) return null;
+
+  const lower = text.toLowerCase();
+  const found = [];
+
+  const emailRegex = /\S+@\S+\.\S+/;
+  if (emailRegex.test(text)) found.push("email address");
+
+  const phoneRegex = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/;
+  if (phoneRegex.test(text)) found.push("phone number");
+
+  const keywords = [
+    "whatsapp", "telegram", "text me", "call me",
+    "email me", "dm me", "instagram", "signal",
+  ];
+  for (const kw of keywords) {
+    if (lower.includes(kw)) found.push(kw);
+  }
+
+  if (found.length === 0) return null;
+
+  const flag = getFlag("contact_off_platform");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Off-platform contact detected: ${found.join(", ")}`,
+  };
+}
+
+function checkRequestDeposit(listingData) {
+  const text = buildSearchText(listingData);
+  if (!text) return null;
+
+  const lower = text.toLowerCase();
+  const keywords = [
+    "deposit",
+    "e-transfer before",
+    "etransfer to hold",
+    "send payment",
+    "pay first",
+    "payment before",
+    "hold the item",
+  ];
+
+  const matched = keywords.filter((kw) => lower.includes(kw));
+  if (matched.length === 0) return null;
+
+  const flag = getFlag("request_deposit");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Deposit/advance payment language detected: "${matched.join('", "')}"`,
+  };
+}
+
+function checkUnusualPaymentMethod(listingData) {
+  const text = buildSearchText(listingData);
+  if (!text) return null;
+
+  const lower = text.toLowerCase();
+  const keywords = [
+    "gift card", "giftcard", "crypto", "bitcoin", "btc",
+    "wire transfer", "western union", "moneygram",
+    "zelle", "venmo", "cashapp",
+  ];
+
+  const matched = keywords.filter((kw) => lower.includes(kw));
+  if (matched.length === 0) return null;
+
+  const flag = getFlag("unusual_payment_method");
+  return {
+    id: flag.id,
+    severity: flag.severity,
+    evidence: `Unusual payment method detected: "${matched.join('", "')}"`,
+  };
+}
 
 // ── Orchestrator ──────────────────────────────────────────────────
 
@@ -91,13 +301,18 @@ const CHECK_MAP = {
   unusual_payment_method: checkUnusualPaymentMethod,
 };
 
-// TODO: Implement — run all rule checks against listingData.
-// For each RULE_FLAGS entry, call the corresponding check function.
-// Each check function should return either:
-//   - null (flag not triggered)
-//   - { id, severity, evidence } (flag triggered, with supporting evidence string)
-//
-// Returns: preFlags[] — array of triggered flags (nulls filtered out)
-function evaluateRules(listingData) {}
+function evaluateRules(listingData) {
+  const results = [];
+
+  for (const flag of RULE_FLAGS) {
+    const checkFn = CHECK_MAP[flag.id];
+    if (!checkFn) continue;
+
+    const result = checkFn(listingData);
+    if (result) results.push(result);
+  }
+
+  return results;
+}
 
 module.exports = { evaluateRules };
