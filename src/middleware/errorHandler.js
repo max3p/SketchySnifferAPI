@@ -7,7 +7,23 @@
 // - Errors with a custom .statusCode and .code property --> use those
 // - Everything else                     --> 500 INTERNAL_ERROR (never leak stack traces)
 
-// TODO: Implement error handler
-function errorHandler(err, req, res, next) {}
+function errorHandler(err, req, res, next) {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({
+      error: { code: "INVALID_REQUEST", message: "Malformed JSON in request body." },
+    });
+  }
+
+  if (err.statusCode && err.code) {
+    return res.status(err.statusCode).json({
+      error: { code: err.code, message: err.message },
+    });
+  }
+
+  console.error("Unhandled error:", err.stack || err);
+  return res.status(500).json({
+    error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred." },
+  });
+}
 
 module.exports = errorHandler;

@@ -7,13 +7,22 @@ const TTL = 3_600_000; // 1 hour in ms
 
 const store = new Map();
 
-// TODO: Implement — return cached data if exists and not expired, otherwise undefined
-function get(key) {}
+function get(key) {
+  const entry = store.get(key);
+  if (!entry) return undefined;
+  if (Date.now() - entry.createdAt > TTL) {
+    store.delete(key);
+    return undefined;
+  }
+  return entry.data;
+}
 
-// TODO: Implement — store data with current timestamp
-function set(key, data) {}
+function set(key, data) {
+  store.set(key, { data, createdAt: Date.now() });
+}
 
-// TODO: Implement — return true if key exists and not expired
-function has(key) {}
+function has(key) {
+  return get(key) !== undefined;
+}
 
 module.exports = { get, set, has };
