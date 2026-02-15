@@ -8,7 +8,10 @@ const cheerio = require("cheerio");
 // Tier 3: Meta tags (og:title, og:description) + DOM selectors
 //
 // Input: url (string)
-// Output: { title, description, price, location } — any field may be undefined
+// Output: expanded listing data object (see docs/scam-detecting-plan.md §6)
+//   { title, description, price, location, category, condition,
+//     images, seller, listing, payment }
+//   — any field may be undefined
 // Throws on: network failures, non-2xx HTTP status, timeout
 
 async function fetchListingHtml(url) {
@@ -98,24 +101,94 @@ function extractFromNextData($) {
 
     if (!apolloState) return result;
 
+    let listingNode = null;
+    let profileNode = null;
+
     for (const key of Object.keys(apolloState)) {
       const node = apolloState[key];
 
       if (node?.title && node?.__typename?.includes("Listing")) {
-        result.title = result.title || node.title;
-        result.description = result.description || node.description;
+        listingNode = node;
+      }
 
-        if (node.price?.amount) {
-          result.price = result.price || `$${node.price.amount}`;
-        }
-
-        if (node.location?.name) {
-          result.location = result.location || node.location.name;
-        }
-
-        break;
+      if (node?.__typename === "StandardProfileV2") {
+        profileNode = node;
       }
     }
+
+    if (!listingNode) return result;
+
+    // Core fields (existing)
+    result.title = listingNode.title;
+    result.description = listingNode.description;
+
+    // Price — expanded to include originalAmount and priceDrop
+    if (listingNode.price?.amount != null) {
+      result.price = {
+        amount: listingNode.price.amount / 100,
+        currency: listingNode.price.currency || "CAD",
+        originalAmount: listingNode.price.originalAmount
+          ? listingNode.price.originalAmount / 100
+          : undefined,
+        priceDrop: listingNode.flags?.priceDrop || false,
+      };
+    }
+
+    // Location — expanded to include address and coordinates
+    if (listingNode.location) {
+      result.location = {
+        name: listingNode.location.name,
+        address: listingNode.location.address,
+        coordinates: listingNode.location.coordinates
+          ? {
+              latitude: listingNode.location.coordinates.latitude,
+              longitude: listingNode.location.coordinates.longitude,
+            }
+          : undefined,
+      };
+    }
+
+    // Category — build hierarchy from Apollo category refs
+    // TODO: Implement — resolve category chain from apolloState refs
+    // For now, use categoryId as a placeholder
+    result.categoryId = listingNode.categoryId;
+
+    // Condition — extract from attributes array
+    // TODO: Implement — find attribute with canonicalName === "condition"
+    // result.condition = ...
+
+    // Images
+    if (listingNode.imageUrls) {
+      result.images = {
+        urls: listingNode.imageUrls,
+        count: listingNode.imageUrls.length,
+      };
+    }
+
+    // Seller profile
+    result.seller = {
+      id: listingNode.posterInfo?.posterId,
+      verified: listingNode.posterInfo?.verified || false,
+      type: listingNode.posterInfo?.sellerType,
+      name: profileNode?.name,
+      numberOfListings: profileNode?.numberOfListings,
+      hasProfilePhoto: profileNode?.imageUrl != null,
+    };
+
+    // Listing metadata
+    result.listing = {
+      id: listingNode.id,
+      activationDate: listingNode.activationDate,
+      endDate: listingNode.endDate,
+      views: listingNode.metrics?.views,
+      topAd: listingNode.flags?.topAd || false,
+      adSource: listingNode.adSource,
+    };
+
+    // Payment attributes
+    // TODO: Implement — extract from attributes array
+    // Look for canonicalName: "cashaccepted", "cashless", "shipping"
+    // result.payment = { cashAccepted, cashless, shipping }
   } catch {
     // Malformed __NEXT_DATA__; skip
   }
@@ -162,18 +235,20 @@ async function scrapeListing(url) {
   const nextData = extractFromNextData($);
   const metaData = extractFromMetaTags($);
 
-  // Merge: spread order gives JSON-LD highest priority
-  const merged = {
-    ...metaData,
-    ...nextData,
-    ...jsonLdData,
-  };
+  // NextData (Apollo state) is the richest source — it has seller, images, metadata.
+  // JSON-LD and meta tags provide fallbacks for core text fields only.
+  // For title/description: JSON-LD > NextData > MetaTags
+  // For everything else: NextData is the sole source.
 
   return {
-    title: merged.title,
-    description: merged.description,
-    price: merged.price,
-    location: merged.location,
+    title: jsonLdData.title || nextData.title || metaData.title,
+    description: jsonLdData.description || nextData.description || metaData.description,
+    price: nextData.price || jsonLdData.price || metaData.price,
+    location: nextData.location || jsonLdData.location || metaData.location,
+    categoryId: nextData.categoryId,
+    images: nextData.images,
+    seller: nextData.seller,
+    listing: nextData.listing,
   };
 }
 
