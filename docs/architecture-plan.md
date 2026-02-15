@@ -99,8 +99,6 @@ The orchestrator. Only component that knows about HTTP status codes (besides mid
 
 ### Scraper Service (`services/scraperService.js`)
 
-Ported from Hackathon-Prep (`Hackathon-Prep/src/services/scraperService.js`).
-
 **Input:** URL string
 **Output:** `{ title, description, price, location }` (any field may be undefined)
 **Approach:** Native `fetch` + cheerio, 3-tier fallback:
@@ -108,8 +106,6 @@ Ported from Hackathon-Prep (`Hackathon-Prep/src/services/scraperService.js`).
 1. JSON-LD structured data (`<script type="application/ld+json">`)
 2. Next.js `__NEXT_DATA__` with Apollo state
 3. Meta tags (`og:title`, `og:description`) + DOM selectors
-
-Enhancement over Hackathon-Prep: `AbortController` with 10s timeout on fetch.
 
 ### Analysis Service (`services/analysisService.js`)
 
