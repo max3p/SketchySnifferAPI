@@ -102,8 +102,11 @@ async function analyzeListing(req, res, next) {
       };
       reflectionPrompts = [];
     }
-    // Strip internal-only fields (evidence) before sending to frontend
-    const clientFindings = mergedFindings.map(({ evidence, ...rest }) => rest);
+    // Strip internal-only fields (evidence) and sort by severity (high → medium → low)
+    const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
+    const clientFindings = mergedFindings
+      .map(({ evidence, ...rest }) => rest)
+      .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3));
     console.log(`[step 4/5] Merged findings: ${clientFindings.length} total`);
 
     const quizQuestions = buildQuizQuestions(mergedFindings);
