@@ -41,7 +41,7 @@ async function analyzeListing(req, res, next) {
     // Step 1: Scrape
     const scrapeStart = Date.now();
     const listingData = await scraperService.scrapeListing(url);
-    console.log(`[step 1/5] Scraped listing in ${Date.now() - scrapeStart}ms — title: "${listingData.title || "N/A"}"`);
+    console.log(`[step 1/5] Scraped listing in ${Date.now() - scrapeStart}ms, title: "${listingData.title || "N/A"}"`);
 
     if (!listingData.title && !listingData.description && !listingData.price) {
       console.log("[analysis] No data extracted, returning 422");
@@ -57,7 +57,7 @@ async function analyzeListing(req, res, next) {
     // Step 2: Rule engine (deterministic)
     const ruleStart = Date.now();
     const preFlags = ruleEngine.evaluateRules(listingData);
-    console.log(`[step 2/5] Rule engine in ${Date.now() - ruleStart}ms — ${preFlags.length} flag(s): ${preFlags.map((f) => f.id).join(", ") || "none"}`);
+    console.log(`[step 2/5] Rule engine in ${Date.now() - ruleStart}ms, ${preFlags.length} flag(s): ${preFlags.map((f) => f.id).join(", ") || "none"}`);
 
     const findings = preFlags.map((preFlag) => {
       const flagDef = RED_FLAGS.find((f) => f.id === preFlag.id);
@@ -71,13 +71,13 @@ async function analyzeListing(req, res, next) {
       };
     });
 
-    // Step 3: AI analysis (subjective) — with graceful fallback
+    // Step 3: AI analysis (subjective), with graceful fallback
     let aiResult = null;
     try {
       console.log("[step 3/5] Calling OpenAI...");
       const aiStart = Date.now();
       aiResult = await analysisService.analyzeListing(listingData, preFlags, userContext);
-      console.log(`[step 3/5] AI analysis in ${Date.now() - aiStart}ms — ${aiResult.findings.length} finding(s), risk score: ${aiResult.risk.score}`);
+      console.log(`[step 3/5] AI analysis in ${Date.now() - aiStart}ms, ${aiResult.findings.length} finding(s), risk score: ${aiResult.risk.score}`);
     } catch (aiErr) {
       console.warn(`[step 3/5] AI analysis failed (${aiErr.code || "UNKNOWN"}): ${aiErr.message}`);
     }
@@ -129,7 +129,7 @@ async function analyzeListing(req, res, next) {
     };
 
     cache.set(url, response);
-    console.log(`[step 5/5] Done in ${Date.now() - startTime}ms — risk: ${risk.level} (${risk.score}/100)\n`);
+    console.log(`[step 5/5] Done in ${Date.now() - startTime}ms, risk: ${risk.level} (${risk.score}/100)\n`);
     return res.status(200).json(response);
   } catch (err) {
     if (err.statusCode && err.code) {

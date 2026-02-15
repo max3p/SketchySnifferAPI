@@ -37,9 +37,9 @@ Every field the scraper can extract, mapped to its scam-detection value.
 |---|---|---|
 | `posterInfo.posterId` | Apollo `posterInfo.posterId` | Seller identification |
 | `posterInfo.sellerType` | Apollo `posterInfo.sellerType` (FSBO/DEALER) | Context for expectations |
-| `posterInfo.verified` | Apollo `posterInfo.verified` | **Key trust signal** — unverified = higher risk |
+| `posterInfo.verified` | Apollo `posterInfo.verified` | **Key trust signal**, unverified = higher risk |
 | `profile.name` | Apollo `StandardProfileV2.name` | Generic/suspicious name detection |
-| `profile.numberOfListings` | Apollo `StandardProfileV2.numberOfListings` | **Key trust signal** — very few listings = higher risk |
+| `profile.numberOfListings` | Apollo `StandardProfileV2.numberOfListings` | **Key trust signal**, very few listings = higher risk |
 | `profile.imageUrl` | Apollo `StandardProfileV2.imageUrl` | No profile photo = higher risk |
 | `profile.userType` | Apollo `StandardProfileV2.userType` | FSBO vs dealer context |
 
@@ -78,7 +78,7 @@ Every field the scraper can extract, mapped to its scam-detection value.
 | `price_drop_extreme` | Rule | Unrealistically large price drop (e.g. $850 → $400) | Calculate `(originalAmount - amount) / originalAmount`. Drops > 60% are suspicious. | medium |
 | `free_or_near_free` | Rule | High-value item listed for free or near-free | `price.amount <= 10`. Items listed at $0-$10 are almost always scams. | high |
 
-**Note:** `price_anchoring` (original price shown to create false sense of savings) is handled as a cognitive bias rather than a red flag — see section 3.
+**Note:** `price_anchoring` (original price shown to create false sense of savings) is handled as a cognitive bias rather than a red flag. See section 3.
 
 ### Category B: Description Red Flags
 
@@ -136,7 +136,7 @@ These aren't scam indicators per se, but psychological triggers that scammers ex
 
 ## 4. Hybrid Detection Architecture
 
-Not every red flag needs AI. Many checks are objective — a listing either has images or it doesn't. Running these deterministically is faster, cheaper, and more reliable than asking the AI to evaluate them.
+Not every red flag needs AI. Many checks are objective, since a listing either has images or it doesn't. Running these deterministically is faster, cheaper, and more reliable than asking the AI to evaluate them.
 
 ### Pipeline: Rule Engine → AI Analysis
 
@@ -146,7 +146,7 @@ Scraped Listing Data
     ▼
 ┌─────────────────────────────────────────────────┐
 │  STEP 1: Rule Engine  (src/services/ruleEngine.js)  │
-│  Deterministic checks — instant, no API cost        │
+│  Deterministic checks, instant, no API cost           │
 │                                                     │
 │  Data checks:                                       │
 │    imageUrls.length === 0        → no_images        │
@@ -166,7 +166,7 @@ Scraped Listing Data
 │    "deposit"/"pay first"/etc.    → request_deposit   │
 │    "gift card"/"crypto"/etc.     → unusual_payment_method│
 │                                                     │
-│  Output: preFlags[] — { id, severity, evidence }    │
+│  Output: preFlags[], { id, severity, evidence }      │
 └──────────────────────┬──────────────────────────────┘
                        │
                        ▼
@@ -215,7 +215,7 @@ Scraped Listing Data
 
 ## 5. Updated Red Flags for `redFlags.js`
 
-Each flag now has an `engine` field: `"rule"` (deterministic, handled by rule engine) or `"ai"` (subjective, handled by AI). Only `"ai"` flags are injected into the AI prompt — rule flags are pre-evaluated and passed as findings.
+Each flag now has an `engine` field: `"rule"` (deterministic, handled by rule engine) or `"ai"` (subjective, handled by AI). Only `"ai"` flags are injected into the AI prompt, as rule flags are pre-evaluated and passed as findings.
 
 ```js
 const RED_FLAGS = [
@@ -366,21 +366,21 @@ The scraper currently extracts `{ title, description, price, location }` but the
 
 For the AI prompt's system context, these are the most common scam types the model should know about:
 
-1. **Phantom Listings** — Item doesn't exist. Scammer collects payment/deposit then disappears. Signals: no original photos, vague description, request for payment before meeting.
+1. **Phantom Listings**: Item doesn't exist. Scammer collects payment/deposit then disappears. Signals: no original photos, vague description, request for payment before meeting.
 
-2. **Overpayment Scam** — Buyer "accidentally" overpays, asks seller to refund difference. Original payment is fraudulent. (Buyer-side scam, less relevant for our tool.)
+2. **Overpayment Scam**: Buyer "accidentally" overpays, asks seller to refund difference. Original payment is fraudulent. (Buyer-side scam, less relevant for our tool.)
 
-3. **Bait and Switch** — Listing advertises one item but seller delivers a different (inferior) item. Signals: stock photos, description mismatch, too-good price.
+3. **Bait and Switch**: Listing advertises one item but seller delivers a different (inferior) item. Signals: stock photos, description mismatch, too-good price.
 
-4. **Phishing / Data Harvesting** — Listing exists to collect personal information. Signals: requests for SSN, email, phone number in description; links to external sites.
+4. **Phishing / Data Harvesting**: Listing exists to collect personal information. Signals: requests for SSN, email, phone number in description; links to external sites.
 
-5. **Fake Payment Proof** — Seller claims payment was sent (fake Zelle/e-transfer screenshot). Signals: pressure to release item before payment clears.
+5. **Fake Payment Proof**: Seller claims payment was sent (fake Zelle/e-transfer screenshot). Signals: pressure to release item before payment clears.
 
-6. **Rental Scam** — Fake rental/property listing to collect deposits. Signals: below-market rent, request deposit before viewing, copied listing photos.
+6. **Rental Scam**: Fake rental/property listing to collect deposits. Signals: below-market rent, request deposit before viewing, copied listing photos.
 
-7. **Counterfeit Goods** — Brand-name items at suspiciously low prices. Signals: price too low for the brand, stock photos, vague condition details.
+7. **Counterfeit Goods**: Brand-name items at suspiciously low prices. Signals: price too low for the brand, stock photos, vague condition details.
 
-8. **Advance Fee Scam** — Seller asks for a deposit, shipping fee, or insurance payment upfront. Signals: any request for money before the buyer sees the item.
+8. **Advance Fee Scam**: Seller asks for a deposit, shipping fee, or insurance payment upfront. Signals: any request for money before the buyer sees the item.
 
 ---
 
@@ -395,8 +395,8 @@ The AI should produce a risk score (0-100) based on weighted flag contributions:
 | Low | 3-7 points each | `seller_unverified`, `single_image`, `seller_no_photo` |
 
 **Risk Levels:**
-- **0-33: Low** — No major red flags. Proceed with normal caution.
-- **34-66: Medium** — Some concerning signals. Verify before committing.
-- **67-100: High** — Multiple red flags. Strong recommendation to walk away or get further verification.
+- **0-33: Low**, no major red flags. Proceed with normal caution.
+- **34-66: Medium**, some concerning signals. Verify before committing.
+- **67-100: High**, multiple red flags. Strong recommendation to walk away or get further verification.
 
-The score should cap at 100. Multiple high-severity flags compound quickly — which is correct, because a listing with no images + off-platform contact + deposit request is almost certainly a scam.
+The score should cap at 100. Multiple high-severity flags compound quickly, which is correct because a listing with no images + off-platform contact + deposit request is almost certainly a scam.

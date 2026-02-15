@@ -1,27 +1,42 @@
 # Pitch: SketchySniffer
 
+We are addressing Prompt #1: enhancing critical thinking through problem solving and reflection. 
+
 When browsing online marketplaces like Kijiji and Facebook Marketplace, people often act on impulse rather than reflection. The excitement of a “great deal” can override caution.
 
 These platforms are filled with legitimate sellers, but also scammers and bad actors. In the rush to secure a bargain, users may overlook red flags, ignore the feeling that something is “too good to be true,” and put themselves at financial or physical risk.
 
-To solve this problem, We are building **SketchySniffer,** an AI-powered decision reflection tool for high-risk online interactions. 
+To solve this problem, We built **SketchySniffer,** an AI-powered decision reflection tool for high-risk online interactions. 
 
-Users paste a marketplace listing into our platform. The AI analyzes the content for common scam patterns and psychological triggers such as scarcity bias or urgency bias. It then provides:
+Users paste a marketplace listing into our platform. Then we use AI to analyze the content for common scam patterns. 
 
-- A risk rating
+So now I’d like I’d like to dive straight into the demo. I’d like to get some audience participation. Could one of the judges please give me an item you might search for on a marketplace. 
+[gets item name]
+[finds listing]
+
+So now what I will do is go to [sketchysniffer.com](http://sketchysniffer.com) and paste this link into the box and hit the Sniff button. 
+
+The System will now fetch the listing data, and analyze 30 data points across the listing, seller profile, and even page metadata, and compare it to 20 risk signals. 
+
+The analysis works using a hybrid approach of deterministic rule-based checks, such as missing images or keyword detection, and AI semantic analysis for more subjective checks such as description coherence and how reasonable the price is. 
+
+We then combine the results to with a risk scoring model that assigns weights to different signals to generate a conclusive risk sore. 
+
+As you can see, the tool then provides:
+
+- The risk rating
 - A clear explanation of detected red flags
 - Insight into cognitive biases being triggered
 
-But we do not stop at detection. The tool then prompts users with reflective questions such as:
+But we do not stop at detection. The tool then prompts users with some questions based on the detected red flags to encourage learning and understanding the patterns. 
 
-- What about this deal excites you?
-- What would make this too good to be true?
+Instead of replacing critical thinking, we support it. The user remains in control, but now with awareness. **A tool like this does NOT EXIST in the current market.**
 
-Instead of replacing critical thinking, we support it. The user remains in control, but now with awareness. **A tool at this capacity like this does NOT EXIST in the current market.**
+[Katie]
 
-The outcome is enhanced user safety while teaching practical critical thinking skills. Users learn to recognize red flags, understand emotional triggers, and pause before acting on impulse.
+The outcome is enhanced user safety while teaching practical critical thinking skills. Users learn to recognize red flags, understand emotional triggers, and pause before acting on impulse. building habits hard → integrate habit into other thingksjklsfjla
 
-AI is rapidly becoming embedded in our workflows. Rather than using AI to think for us, we use it to strengthen our thinking. Our goal is not automation of judgment, but cultivation of it.
+AI is rapidly becoming embedded in our workflows. Rather than using AI to think for us, we will use it to strengthen our **thinking**. Our goal is not automation of judgment, but cultivation of it.
 
 ---
 

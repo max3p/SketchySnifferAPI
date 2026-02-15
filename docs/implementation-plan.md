@@ -71,7 +71,7 @@ Scan `listingData.description` (and optionally `title`) for patterns. Return mat
 
 ### 1C. Orchestrator
 
-`evaluateRules(listingData)` — iterate `RULE_FLAGS`, call `CHECK_MAP[flag.id]`, collect non-null results.
+`evaluateRules(listingData)`: iterate `RULE_FLAGS`, call `CHECK_MAP[flag.id]`, collect non-null results.
 
 ### 1D. Wire into controller
 
@@ -80,7 +80,7 @@ Update `analysisController.js` step 2: replace `const preFlags = []` with actual
 ### Verification
 
 - Start server, POST the sample ski listing URL
-- Expect findings for: `seller_unverified`, `seller_no_photo`, `single_image`, `price_drop_extreme` (53% drop, under threshold — should NOT trigger since 53% < 60%)
+- Expect findings for: `seller_unverified`, `seller_no_photo`, `single_image`, `price_drop_extreme` (53% drop, under threshold, should NOT trigger since 53% < 60%)
 - Manually test with crafted listing data containing urgency language, deposit requests, etc.
 
 ---
@@ -91,7 +91,7 @@ Update `analysisController.js` step 2: replace `const preFlags = []` with actual
 
 ### 2A. System prompt
 
-**File:** `src/config/openai.js` — write `SYSTEM_PROMPT`
+**File:** `src/config/openai.js`, write `SYSTEM_PROMPT`
 
 The system prompt should define:
 - Role: "You are a scam detection analyst for online marketplace listings"
@@ -115,17 +115,17 @@ The system prompt should define:
 
 ### 2B. Build user message
 
-**File:** `src/services/analysisService.js` — implement `buildUserMessage(listingData, preFlags, userContext)`
+**File:** `src/services/analysisService.js`, implement `buildUserMessage(listingData, preFlags, userContext)`
 
 Construct a structured text message containing:
-1. **Listing data** — title, description, price (amount, original, drop%), category, condition, location, image count, seller profile
-2. **Pre-flagged findings** — list of rule engine flags already triggered with evidence
-3. **AI flag definitions** — the 6 `engine: "ai"` flags from `redFlags.js` for the model to evaluate
-4. **User context** — if provided, include as "The user said: ..."
+1. **Listing data**: title, description, price (amount, original, drop%), category, condition, location, image count, seller profile
+2. **Pre-flagged findings**: list of rule engine flags already triggered with evidence
+3. **AI flag definitions**: the 6 `engine: "ai"` flags from `redFlags.js` for the model to evaluate
+4. **User context**: if provided, include as "The user said: ..."
 
 ### 2C. OpenAI call
 
-**File:** `src/services/analysisService.js` — implement `callOpenAI(userMessage)`
+**File:** `src/services/analysisService.js`, implement `callOpenAI(userMessage)`
 
 - Use the `client` from `config/openai.js`
 - Model: `OPENAI_MODEL` (gpt-4o)
@@ -141,7 +141,7 @@ Construct a structured text message containing:
 
 ### 2D. Response validation
 
-**File:** `src/services/analysisService.js` — implement `validateAnalysisResponse(parsed)`
+**File:** `src/services/analysisService.js`, implement `validateAnalysisResponse(parsed)`
 
 Validate the AI response matches expected schema:
 - `risk.score` is number 0-100
@@ -154,7 +154,7 @@ Validate the AI response matches expected schema:
 
 ### 2E. Orchestrator
 
-**File:** `src/services/analysisService.js` — implement `analyzeListing(listingData, preFlags, userContext)`
+**File:** `src/services/analysisService.js`, implement `analyzeListing(listingData, preFlags, userContext)`
 
 1. Call `buildUserMessage()`
 2. Call `callOpenAI()`
@@ -291,7 +291,7 @@ Validate all required env vars at startup (not just `OPENAI_API_KEY`).
 
 ## Dependency Notes
 
-- `uuid` package is ESM-only on v13+ — currently using `crypto.randomBytes()` instead for ID generation. Consider removing `uuid` from `package.json` since it's unused.
+- `uuid` package is ESM-only on v13+, so we use `crypto.randomBytes()` instead for ID generation. Consider removing `uuid` from `package.json` since it's unused.
 - No new dependencies required for phases 1-3.
 - Phase 4D (rate limiting) may require `express-rate-limit`.
 - Phase 5B (security headers) may require `helmet`.

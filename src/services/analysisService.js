@@ -11,9 +11,9 @@ const RED_FLAGS = require("../config/redFlags");
 //   - Human-readable risk narrative and reflection prompts
 //
 // Input:
-//   listingData — expanded scraper output (see docs/scam-detecting-plan.md §6)
-//   preFlags    — array of { id, severity, evidence } from the rule engine
-//   userContext — optional string with user-provided context (or null)
+//   listingData: expanded scraper output (see docs/scam-detecting-plan.md §6)
+//   preFlags:    array of { id, severity, evidence } from the rule engine
+//   userContext: optional string with user-provided context (or null)
 //
 // Output: { risk, findings, reflection_prompts } (validated)
 // Throws on: OpenAI errors, validation failures
@@ -88,11 +88,11 @@ Payment: ${formatPayment(listingData.payment)}`);
 
   // Section 2: Pre-flagged findings
   if (preFlags.length === 0) {
-    sections.push(`=== PRE-FLAGGED FINDINGS (confirmed by rule engine — do not re-evaluate) ===
+    sections.push(`=== PRE-FLAGGED FINDINGS (confirmed by rule engine, do not re-evaluate) ===
 None.`);
   } else {
     const flagLines = preFlags.map((f) => `- [${f.severity.toUpperCase()}] ${f.id}: ${f.evidence}`);
-    sections.push(`=== PRE-FLAGGED FINDINGS (confirmed by rule engine — do not re-evaluate) ===
+    sections.push(`=== PRE-FLAGGED FINDINGS (confirmed by rule engine, do not re-evaluate) ===
 ${flagLines.join("\n")}`);
   }
 

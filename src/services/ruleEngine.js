@@ -1,14 +1,14 @@
 const RED_FLAGS = require("../config/redFlags");
 
 // Deterministic rule engine for scam detection.
-// Evaluates listing data against all "rule" engine flags — no AI needed.
+// Evaluates listing data against all "rule" engine flags. No AI needed.
 //
 // Two kinds of checks:
-//   1. Data checks — boolean/numeric conditions on structured fields
-//   2. Keyword/regex checks — pattern matching on description text
+//   1. Data checks: boolean/numeric conditions on structured fields
+//   2. Keyword/regex checks: pattern matching on description text
 //
-// Input:  listingData (expanded scraper output — see docs/scam-detecting-plan.md §6)
-// Output: preFlags[] — array of { id, severity, evidence } for each triggered flag
+// Input:  listingData (expanded scraper output, see docs/scam-detecting-plan.md §6)
+// Output: preFlags[], an array of { id, severity, evidence } for each triggered flag
 //
 // These preFlags are passed to the AI so it can factor them into its risk score
 // without re-evaluating objective facts.

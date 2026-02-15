@@ -49,7 +49,7 @@ Analyze a marketplace listing URL and return risk assessment, combined findings 
 
 ### `listing` object
 
-Scraped listing data from the marketplace URL. Fields depend on what the scraper could extract — any field may be `undefined`.
+Scraped listing data from the marketplace URL. Fields depend on what the scraper could extract, and any field may be `undefined`.
 
 | Field | Type | Description |
 | --- | --- | --- |

@@ -11,7 +11,7 @@ const cheerio = require("cheerio");
 // Output: expanded listing data object (see docs/scam-detecting-plan.md §6)
 //   { title, description, price, location, category, condition,
 //     images, seller, listing, payment }
-//   — any field may be undefined
+//    - any field may be undefined
 // Throws on: network failures, non-2xx HTTP status, timeout
 
 async function fetchListingHtml(url) {
@@ -122,7 +122,7 @@ function extractFromNextData($) {
     result.title = listingNode.title;
     result.description = listingNode.description;
 
-    // Price — expanded to include originalAmount and priceDrop
+    // Price (expanded to include originalAmount and priceDrop)
     if (listingNode.price?.amount != null) {
       result.price = {
         amount: listingNode.price.amount / 100,
@@ -134,7 +134,7 @@ function extractFromNextData($) {
       };
     }
 
-    // Location — expanded to include address and coordinates
+    // Location (expanded to include address and coordinates)
     if (listingNode.location) {
       result.location = {
         name: listingNode.location.name,
@@ -148,7 +148,7 @@ function extractFromNextData($) {
       };
     }
 
-    // Category — resolve hierarchy from Apollo Category refs
+    // Category (resolve hierarchy from Apollo Category refs)
     // The listing's category node has categoryPaths: [{ __ref: "Category:10" }, ...]
     // Each ref points to a Category node with a localizedName key
     const categoryNode = apolloState[`Category:${listingNode.categoryId}`];
@@ -164,7 +164,7 @@ function extractFromNextData($) {
         .filter(Boolean);
     }
 
-    // Attributes — extract condition and payment info from attributes.all[]
+    // Attributes (extract condition and payment info from attributes.all[])
     const attributes = listingNode.attributes?.all || [];
 
     function getAttr(canonicalName) {
@@ -205,7 +205,7 @@ function extractFromNextData($) {
       adSource: listingNode.adSource,
     };
 
-    // Payment attributes — canonicalValues are "true"/"false" strings
+    // Payment attributes (canonicalValues are "true"/"false" strings)
     const cashAccepted = getAttr("cashaccepted");
     const cashless = getAttr("cashless");
     const shipping = getAttr("shipping");
@@ -261,7 +261,7 @@ async function scrapeListing(url) {
   const nextData = extractFromNextData($);
   const metaData = extractFromMetaTags($);
 
-  // NextData (Apollo state) is the richest source — it has seller, images, metadata.
+  // NextData (Apollo state) is the richest source, providing seller, images, and metadata.
   // JSON-LD and meta tags provide fallbacks for core text fields only.
   // For title/description: JSON-LD > NextData > MetaTags
   // For everything else: NextData is the sole source.

@@ -29,7 +29,7 @@ const QUIZ_BANK = [
       id: "q_seller",
       prompt: "You find a great deal from a seller with no profile photo and no verification. What should you do?",
       options: [
-        { id: "a", text: "It's probably fine — lots of people don't bother with profiles" },
+        { id: "a", text: "It's probably fine, lots of people don't bother with profiles" },
         { id: "b", text: "Check their other listings and ask questions before committing" },
         { id: "c", text: "Ignore the profile and focus only on the item" },
       ],
@@ -46,7 +46,7 @@ const QUIZ_BANK = [
     triggerIds: ["urgency_language", "urgency_bias", "scarcity_bias", "loss_aversion"],
     question: {
       id: "q_urgency",
-      prompt: "A listing says \"Must sell today — first come first served!\" How should this affect your decision?",
+      prompt: "A listing says \"Must sell today, first come first served!\" How should this affect your decision?",
       options: [
         { id: "a", text: "Act quickly before someone else gets it" },
         { id: "b", text: "Recognize this as a pressure tactic and take extra time to verify" },
@@ -67,7 +67,7 @@ const QUIZ_BANK = [
       id: "q_offplatform",
       prompt: "A seller asks you to continue the conversation on WhatsApp instead of the platform. Why might this be risky?",
       options: [
-        { id: "a", text: "It's not risky — WhatsApp is just easier to use" },
+        { id: "a", text: "It's not risky, WhatsApp is just easier to use" },
         { id: "b", text: "Moving off-platform removes the safety net of the marketplace's records and protections" },
         { id: "c", text: "It only matters if they also ask for payment" },
       ],
@@ -86,7 +86,7 @@ const QUIZ_BANK = [
       id: "q_price",
       prompt: "An item normally worth $800 is listed for $200. What is the most important thing to consider?",
       options: [
-        { id: "a", text: "Jump on it — this is a rare bargain" },
+        { id: "a", text: "Jump on it, this is a rare bargain" },
         { id: "b", text: "Ask why the price is so low and verify the item exists before paying" },
         { id: "c", text: "It's probably just someone who needs quick cash" },
       ],
@@ -124,7 +124,7 @@ const QUIZ_BANK = [
       id: "q_cashless",
       prompt: "A seller insists on cashless payment only for an in-person item. What should you consider?",
       options: [
-        { id: "a", text: "Cashless is more convenient — go ahead" },
+        { id: "a", text: "Cashless is more convenient, just go ahead" },
         { id: "b", text: "Ask why cash isn't accepted and consider meeting at a safe location with a traceable payment method" },
         { id: "c", text: "It doesn't matter how you pay as long as you get the item" },
       ],
@@ -160,11 +160,11 @@ const QUIZ_BANK = [
     triggerIds: ["too_good_to_be_true"],
     question: {
       id: "q_toogood",
-      prompt: "A deal seems almost too good to be true — great price, popular item, motivated seller. What's the smartest move?",
+      prompt: "A deal seems almost too good to be true, with a great price, popular item, and motivated seller. What's the smartest move?",
       options: [
         { id: "a", text: "Act fast before someone else grabs it" },
         { id: "b", text: "Slow down, verify the seller and item independently before committing" },
-        { id: "c", text: "Trust your gut — if it feels like a deal, it probably is" },
+        { id: "c", text: "Trust your gut, if it feels like a deal it probably is" },
       ],
       correct_option_id: "b",
       feedback: {
@@ -201,7 +201,7 @@ const QUIZ_BANK = [
       prompt: "A listing uses very professional language, brand-name dropping, and impressive credentials. Should you trust it more?",
       options: [
         { id: "a", text: "Professional listings are always more reliable" },
-        { id: "b", text: "Verify claims independently — professional language can be used to build false trust" },
+        { id: "b", text: "Verify claims independently, as professional language can be used to build false trust" },
         { id: "c", text: "Only trust it if the seller is verified" },
       ],
       correct_option_id: "b",

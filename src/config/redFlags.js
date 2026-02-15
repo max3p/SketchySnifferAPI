@@ -1,7 +1,7 @@
 // Red flag pattern definitions.
 // Each flag has an `engine` field:
-//   "rule" — evaluated deterministically by the rule engine (instant, no API cost)
-//   "ai"   — evaluated by GPT-4o (subjective judgment required)
+//   "rule": evaluated deterministically by the rule engine (instant, no API cost)
+//   "ai":   evaluated by GPT-4o (subjective judgment required)
 //
 // Rule flags are pre-evaluated and passed to the AI as context.
 // AI flags are injected into the prompt so the model evaluates them.
