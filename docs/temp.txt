@@ -1,0 +1,16 @@
+Some things ive noticed while testing:
+
+- the AI is too critical, and seems bias towards high scam score for innocent looking listings. it should be a little more relaxed. 
+
+- it treats off-platform contacts too harshly. contact over phone is normal for kijiji, this is not a red flag. other platforms are indeed questionable, but maybe a medium severity signal. 
+
+- it correctly identifies signals such as: 
+"lacks condition details"
+"pressure to act quickly" because the listing said "priced to sell"
+"articificial scarcity" because the seller said its a rare find. 
+but it considered these signals too harshy. 
+
+in reality, it was a legitimate posting by a legitimate seller, but these folks often say these things to get their item sold. 
+we still need to show these flags and inform the user, but the scam score should be a bit more lenient to these. 
+
+overall, the system works, the AI is just too strict and needs to take a chill pill a bit. 

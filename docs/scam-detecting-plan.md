@@ -86,7 +86,7 @@ Every field the scraper can extract, mapped to its scam-detection value.
 | ID | Engine | Red Flag | Detection Strategy | Severity |
 |---|---|---|---|---|
 | `urgency_language` | Rule | Pressure language pushing quick action | Keyword/phrase matching: "must sell today", "first come first served", "won't last", "act fast", "moving sale", "need gone ASAP", "today only", "serious buyers only". | medium |
-| `contact_off_platform` | Rule | Requests to communicate outside the platform | Regex matching: email addresses, phone numbers, "text me at", "WhatsApp", "call me", "email me", "DM on Instagram", "Telegram". | high |
+| `contact_off_platform` | Rule | Requests to communicate outside the platform | Regex matching: email addresses, "text me", "WhatsApp", "email me", "DM on Instagram", "Telegram". Phone numbers are excluded (normal on Kijiji). | medium |
 | `request_deposit` | Rule | Seller asks for deposit or payment before meeting | Keyword matching: "deposit required", "e-transfer before", "send payment", "pay first", "etransfer to hold". | high |
 | `unusual_payment_method` | Rule | Requests for gift cards, crypto, wire transfer | Keyword matching: "gift card", "crypto", "bitcoin", "wire transfer", "Western Union", "MoneyGram", "Zelle". Gift card requests are the #1 scam signal (92% recognition rate). | high |
 | `vague_description` | AI | Description lacks specific details about condition, history, or features | AI evaluates description depth and informativeness. Descriptions that simply repeat the title or lack substance. | medium |
@@ -161,7 +161,7 @@ Scraped Listing Data
 │                                                     │
 │  Keyword/regex checks:                              │
 │    urgency phrases               → urgency_language  │
-│    email/phone/WhatsApp/Telegram → contact_off_platform│
+│    email/WhatsApp/Telegram/etc.  → contact_off_platform│
 │    "deposit"/"pay first"/etc.    → request_deposit   │
 │    "gift card"/"crypto"/etc.     → unusual_payment_method│
 │                                                     │
@@ -225,8 +225,8 @@ const RED_FLAGS = [
   // ── Rule Engine: Description (keyword/regex) ────────────────────
   { id: "urgency_language", engine: "rule", severity: "medium",
     description: "Pressure language detected: 'must sell today', 'first come first served', 'won't last', 'act fast', 'need gone ASAP', 'today only', 'serious buyers only'" },
-  { id: "contact_off_platform", engine: "rule", severity: "high",
-    description: "Off-platform contact detected: email addresses, phone numbers, WhatsApp, Telegram, Instagram, 'text me', 'call me'" },
+  { id: "contact_off_platform", engine: "rule", severity: "medium",
+    description: "Off-platform contact detected: email addresses, WhatsApp, Telegram, Instagram, 'text me', 'dm me'" },
   { id: "request_deposit", engine: "rule", severity: "high",
     description: "Deposit/advance payment language detected: 'deposit required', 'e-transfer before', 'send payment', 'pay first', 'etransfer to hold'" },
   { id: "unusual_payment_method", engine: "rule", severity: "high",
@@ -381,9 +381,9 @@ The AI should produce a risk score (0-100) based on weighted flag contributions:
 
 | Severity | Weight | Example Contribution |
 |---|---|---|
-| High | 20-30 points each | `contact_off_platform`, `request_deposit`, `no_images`, `price_too_low` |
-| Medium | 10-15 points each | `urgency_language`, `vague_description`, `seller_few_listings` |
-| Low | 3-7 points each | `single_image`, `short_listing_duration`, `promoted_cheap_item` |
+| High | 15-20 points each | `request_deposit`, `no_images`, `price_too_low`, `unusual_payment_method` |
+| Medium | 7-10 points each | `urgency_language`, `vague_description`, `seller_few_listings`, `contact_off_platform` |
+| Low | 2-5 points each | `single_image`, `short_listing_duration`, `promoted_cheap_item` |
 
 **Risk Levels:**
 - **0-33: Low**, no major red flags. Proceed with normal caution.

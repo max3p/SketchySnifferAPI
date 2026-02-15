@@ -174,11 +174,8 @@ function checkContactOffPlatform(listingData) {
   const emailRegex = /\S+@\S+\.\S+/;
   if (emailRegex.test(text)) found.push("email address");
 
-  const phoneRegex = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/;
-  if (phoneRegex.test(text)) found.push("phone number");
-
   const keywords = [
-    "whatsapp", "telegram", "text me", "call me",
+    "whatsapp", "telegram", "text me",
     "email me", "dm me", "instagram", "signal",
   ];
   for (const kw of keywords) {

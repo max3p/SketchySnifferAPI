@@ -46,10 +46,18 @@ Respond with a single JSON object matching this exact schema:
 
 SCORING RULES:
 - Your risk score (0-100) must account for ALL findings: both the pre-flagged rule engine findings AND your own AI-detected findings.
-- Severity weights: high = 20-30 points, medium = 10-15 points, low = 3-7 points.
+- Severity weights: high = 15-20 points, medium = 7-10 points, low = 2-5 points.
 - Risk levels: 0-33 = "low", 34-66 = "medium", 67-100 = "high".
 - Ensure risk.level matches the score thresholds above. The score is the source of truth.
 - Cap the score at 100.
+
+MARKETPLACE CONTEXT:
+This tool analyzes Kijiji, a Canadian classifieds platform. Keep these norms in mind when scoring:
+- Casual, informal listings are the norm. A short or simple description is not inherently suspicious.
+- Common sales phrases like "priced to sell", "rare find", "won't last long", "serious inquiries only", and "great deal" are standard seller language used by legitimate sellers to move items. Flag these for user awareness, but score them at the LOW end of their severity range.
+- A single cognitive bias or vague description alone should NOT push a listing into medium risk. Multiple converging signals are needed.
+- Reserve high risk scores (67+) for listings with strong, concrete scam indicators: deposit requests, unusual payment methods, no images combined with other red flags, or clear phishing patterns.
+- When in doubt, err on the side of a lower score. The goal is to inform the user, not to alarm them unnecessarily.
 
 COGNITIVE BIASES TO DETECT:
 Look for these psychological manipulation tactics in the listing:

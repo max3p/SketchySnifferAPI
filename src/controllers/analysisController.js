@@ -7,7 +7,7 @@ const analysisService = require("../services/analysisService");
 const { buildQuizQuestions } = require("../config/quizBank");
 
 // Severity weights for rule-only fallback scoring (matches docs/scam-detecting-plan.md).
-const SEVERITY_WEIGHTS = { high: 25, medium: 12, low: 5 };
+const SEVERITY_WEIGHTS = { high: 18, medium: 8, low: 3 };
 
 function calculateRuleOnlyScore(preFlags) {
   const raw = preFlags.reduce((sum, f) => sum + (SEVERITY_WEIGHTS[f.severity] || 0), 0);
