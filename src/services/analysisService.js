@@ -204,7 +204,6 @@ function validateAnalysisResponse(parsed) {
     if (typeof f.summary !== "string" || f.summary.length === 0) fail(`findings[${i}].summary must be a non-empty string`);
     if (typeof f.explanation !== "string" || f.explanation.length === 0) fail(`findings[${i}].explanation must be a non-empty string`);
     if (!VALID_SEVERITIES.includes(f.severity)) fail(`findings[${i}].severity must be low, medium, or high`);
-    if (!Array.isArray(f.evidence)) fail(`findings[${i}].evidence must be an array`);
   }
 
   // Validate reflection_prompts

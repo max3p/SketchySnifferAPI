@@ -64,11 +64,10 @@ async function analyzeListing(req, res, next) {
       return {
         id: preFlag.id,
         type: "red_flag",
-        header: flagDef ? flagDef.description : preFlag.id,
+        header: flagDef?.label || preFlag.id,
         summary: preFlag.evidence,
-        explanation: flagDef ? flagDef.description : preFlag.evidence,
+        explanation: flagDef?.description || preFlag.evidence,
         severity: preFlag.severity,
-        evidence: [preFlag.evidence],
       };
     });
 
@@ -103,7 +102,9 @@ async function analyzeListing(req, res, next) {
       };
       reflectionPrompts = [];
     }
-    console.log(`[step 4/5] Merged findings: ${mergedFindings.length} total`);
+    // Strip internal-only fields (evidence) before sending to frontend
+    const clientFindings = mergedFindings.map(({ evidence, ...rest }) => rest);
+    console.log(`[step 4/5] Merged findings: ${clientFindings.length} total`);
 
     const quizQuestions = buildQuizQuestions(mergedFindings);
 
@@ -117,9 +118,9 @@ async function analyzeListing(req, res, next) {
         platform: "kijiji",
         url,
       },
-      listing: listingData, // DEBUG: not in API contract — remove in Phase 5
+      listing: listingData,
       risk,
-      findings: mergedFindings,
+      findings: clientFindings,
       reflection_prompts: reflectionPrompts,
       quiz: { questions: quizQuestions },
     };

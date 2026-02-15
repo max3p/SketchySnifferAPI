@@ -63,7 +63,7 @@ Look for these psychological manipulation tactics in the listing:
 CONSTRAINTS:
 - Return 2-6 findings (your AI-detected findings only). Do not include rule engine flags in your findings — they are handled separately.
 - Findings can be "red_flag" type (from AI FLAG DEFINITIONS) or "cognitive_bias" type.
-- Only flag something if you have genuine evidence from the listing data. Do not invent evidence.
+- Only flag something if there is genuine evidence in the listing data.
 - Generate 2-4 reflection prompts tailored to the specific red flags and biases found in THIS listing.
 - Do NOT re-evaluate or duplicate the pre-flagged rule engine findings. They are confirmed facts.
 - Return raw JSON only. No markdown formatting, no code fences, no commentary outside the JSON object.`;

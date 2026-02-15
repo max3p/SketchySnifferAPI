@@ -35,28 +35,68 @@ Analyze a marketplace listing URL and return risk assessment, combined findings 
 | `analysis_id` | string | Unique ID for this analysis (for caching/traceability) |
 | `created_at` | string (ISO 8601) | Timestamp of analysis |
 | `source` | object | Source metadata |
-| `source.platform` | string | `kijiji` | `facebook_marketplace` | `unknown` |
+| `source.platform` | string | `kijiji` \| `facebook_marketplace` \| `unknown` |
 | `source.url` | string | Normalized URL analyzed |
+| `listing` | object | Scraped listing data (see `listing` section below) |
 | `risk` | object | Risk summary |
 | `risk.score` | number | 0–100 (higher = riskier) |
-| `risk.level` | string | `low` | `medium` | `high` |
+| `risk.level` | string | `low` \| `medium` \| `high` |
 | `risk.summary` | string | Plain-language summary |
 | `findings` | array | Combined red flags + cognitive bias triggers |
 | `reflection_prompts` | array | Reflection prompts |
 | `quiz` | object | Quiz section |
 | `quiz.questions` | array | Quiz questions |
 
+### `listing` object
+
+Scraped listing data from the marketplace URL. Fields depend on what the scraper could extract — any field may be `undefined`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `title` | string | Listing title |
+| `description` | string | Listing description |
+| `price` | object \| string | Price info (object from Apollo, string from fallback) |
+| `price.amount` | number | Price in dollars |
+| `price.currency` | string | Currency code (e.g., `"CAD"`) |
+| `price.originalAmount` | number | Original price before drop (if applicable) |
+| `price.priceDrop` | boolean | Whether a price drop occurred |
+| `location` | object \| string | Location info |
+| `location.name` | string | Location name (e.g., `"Calgary"`) |
+| `location.address` | string | Full address |
+| `location.coordinates` | object | `{ latitude, longitude }` |
+| `category` | array of strings | Category hierarchy (e.g., `["Buy & Sell", "Sporting Goods", "Ski"]`) |
+| `condition` | string | Item condition (e.g., `"Used - Good"`) |
+| `images` | object | Image info |
+| `images.urls` | array of strings | Image URLs |
+| `images.count` | number | Number of images |
+| `seller` | object | Seller profile |
+| `seller.id` | string | Seller ID |
+| `seller.name` | string | Seller name |
+| `seller.verified` | boolean | Whether seller is verified |
+| `seller.type` | string | Seller type (e.g., `"FSBO"`) |
+| `seller.numberOfListings` | number | Active listing count |
+| `seller.hasProfilePhoto` | boolean | Whether seller has a profile photo |
+| `listing` | object | Listing metadata |
+| `listing.id` | string | Listing ID |
+| `listing.activationDate` | string | Date listing was posted |
+| `listing.endDate` | string | Date listing expires |
+| `listing.views` | number | View count |
+| `listing.topAd` | boolean | Whether listing is promoted |
+| `payment` | object | Payment options |
+| `payment.cashAccepted` | boolean | Whether cash is accepted |
+| `payment.cashless` | boolean | Whether cashless payment is accepted |
+| `payment.shipping` | boolean | Whether shipping is available |
+
 ### `findings[]` item
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `id` | string | Finding identifier |
-| `type` | string | `red_flag` | `cognitive_bias` |
-| `header` | string | Short title |
+| `type` | string | `red_flag` \| `cognitive_bias` |
+| `header` | string | Short title (3-8 words) |
 | `summary` | string | One-line summary |
 | `explanation` | string | Longer explanation |
-| `severity` | string | `low` | `medium` | `high` |
-| `evidence` | array of strings | Supporting signals/phrases |
+| `severity` | string | `low` \| `medium` \| `high` |
 
 ### `quiz.questions[]` item
 
@@ -85,9 +125,50 @@ Analyze a marketplace listing URL and return risk assessment, combined findings 
     "platform": "kijiji",
     "url": "https://www.kijiji.ca/v-ski/calgary/dps-wailer-pagoda-94-x-178/1732998393"
   },
+  "listing": {
+    "title": "DPS Wailer Pagoda 94 x 178",
+    "description": "DPS Wailer Pagoda 94 x 178",
+    "price": {
+      "amount": 400,
+      "currency": "CAD",
+      "originalAmount": 850,
+      "priceDrop": true
+    },
+    "location": {
+      "name": "Calgary",
+      "address": "Calgary, AB T2T 5R6",
+      "coordinates": { "latitude": 51.04, "longitude": -114.08 }
+    },
+    "category": ["Buy & Sell", "Sporting Goods & Exercise", "Ski"],
+    "condition": "Used - Good",
+    "images": {
+      "urls": ["https://media.kijiji.ca/api/v1/ca-prod/images/..."],
+      "count": 1
+    },
+    "seller": {
+      "id": "1018566818",
+      "verified": false,
+      "type": "FSBO",
+      "name": "keith hanna",
+      "numberOfListings": 3,
+      "hasProfilePhoto": false
+    },
+    "listing": {
+      "id": "1732998393",
+      "activationDate": "2026-02-11T00:01:54.000Z",
+      "endDate": "2026-04-12T00:01:54.000Z",
+      "views": 210,
+      "topAd": false
+    },
+    "payment": {
+      "cashAccepted": true,
+      "cashless": false,
+      "shipping": false
+    }
+  },
   "risk": {
     "score": 72,
-    "level": "medium",
+    "level": "high",
     "summary": "Multiple scam patterns and impulse triggers were detected. Verify before paying or meeting."
   },
   "findings": [
@@ -97,8 +178,7 @@ Analyze a marketplace listing URL and return risk assessment, combined findings 
       "header": "Price is unusually low",
       "summary": "The price appears below typical market range.",
       "explanation": "Underpricing is commonly used to create urgency and reduce verification behavior.",
-      "severity": "high",
-      "evidence": ["Listed price far below comparable items"]
+      "severity": "high"
     },
     {
       "id": "urgency_bias",
@@ -106,8 +186,7 @@ Analyze a marketplace listing URL and return risk assessment, combined findings 
       "header": "Urgency pressure detected",
       "summary": "Time pressure can reduce careful evaluation.",
       "explanation": "Urgency bias narrows attention and increases impulsive decisions.",
-      "severity": "medium",
-      "evidence": ["\"must sell today\"", "\"first come first served\""]
+      "severity": "medium"
     }
   ],
   "reflection_prompts": [
