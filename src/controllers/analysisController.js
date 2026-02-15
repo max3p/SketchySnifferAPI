@@ -3,6 +3,15 @@ const cache = require("../config/cache");
 const scraperService = require("../services/scraperService");
 const ruleEngine = require("../services/ruleEngine");
 const RED_FLAGS = require("../config/redFlags");
+const analysisService = require("../services/analysisService");
+
+// Severity weights for rule-only fallback scoring (matches docs/scam-detecting-plan.md).
+const SEVERITY_WEIGHTS = { high: 25, medium: 12, low: 5 };
+
+function calculateRuleOnlyScore(preFlags) {
+  const raw = preFlags.reduce((sum, f) => sum + (SEVERITY_WEIGHTS[f.severity] || 0), 0);
+  return Math.min(raw, 100);
+}
 
 // POST /api/analyses handler
 //
@@ -13,7 +22,7 @@ const RED_FLAGS = require("../config/redFlags");
 //   4. Merge rule flags + AI findings into final response
 //   5. Cache and return
 //
-// Steps 2-4 return placeholder data for now.
+// If the AI call fails, falls back to rule-engine-only response (4A hardening).
 
 // Quiz question bank — each entry maps to one or more finding IDs that trigger it.
 const QUIZ_BANK = [
@@ -156,24 +165,34 @@ async function analyzeListing(req, res, next) {
 
   const cached = cache.get(url);
   if (cached) {
+    console.log(`[cache hit] ${url}`);
     return res.status(200).json(cached);
   }
 
+  console.log(`\n[analysis] Starting analysis for: ${url}`);
+  const startTime = Date.now();
+
   try {
     // Step 1: Scrape
+    const scrapeStart = Date.now();
     const listingData = await scraperService.scrapeListing(url);
+    console.log(`[step 1/5] Scraped listing in ${Date.now() - scrapeStart}ms — title: "${listingData.title || "N/A"}"`);
 
     if (!listingData.title && !listingData.description && !listingData.price) {
+      console.log("[analysis] No data extracted, returning 422");
       return res.status(422).json({
         error: {
           code: "UNSUPPORTED_URL",
           message: "Could not extract listing data from the provided URL.",
+          details: {},
         },
       });
     }
 
     // Step 2: Rule engine (deterministic)
+    const ruleStart = Date.now();
     const preFlags = ruleEngine.evaluateRules(listingData);
+    console.log(`[step 2/5] Rule engine in ${Date.now() - ruleStart}ms — ${preFlags.length} flag(s): ${preFlags.map((f) => f.id).join(", ") || "none"}`);
 
     const findings = preFlags.map((preFlag) => {
       const flagDef = RED_FLAGS.find((f) => f.id === preFlag.id);
@@ -188,48 +207,41 @@ async function analyzeListing(req, res, next) {
       };
     });
 
-    // Step 3: AI analysis (subjective)
-    // TODO: call analysisService.analyzeListing(listingData, preFlags, userContext)
+    // Step 3: AI analysis (subjective) — with graceful fallback
+    let aiResult = null;
+    try {
+      console.log("[step 3/5] Calling OpenAI...");
+      const aiStart = Date.now();
+      aiResult = await analysisService.analyzeListing(listingData, preFlags, userContext);
+      console.log(`[step 3/5] AI analysis in ${Date.now() - aiStart}ms — ${aiResult.findings.length} finding(s), risk score: ${aiResult.risk.score}`);
+    } catch (aiErr) {
+      console.warn(`[step 3/5] AI analysis failed (${aiErr.code || "UNKNOWN"}): ${aiErr.message}`);
+    }
 
-    // Step 4: Merge
-    // TODO: combine preFlags + AI findings
+    // Step 4: Merge rule findings + AI findings
+    let mergedFindings;
+    let risk;
+    let reflectionPrompts;
+
+    if (aiResult) {
+      mergedFindings = [...findings, ...aiResult.findings];
+      risk = aiResult.risk;
+      reflectionPrompts = aiResult.reflection_prompts;
+    } else {
+      // Fallback: rule-engine-only response
+      mergedFindings = findings;
+      const score = calculateRuleOnlyScore(preFlags);
+      risk = {
+        score,
+        level: score <= 33 ? "low" : score <= 66 ? "medium" : "high",
+        summary: "AI analysis unavailable. Rule-based checks completed.",
+      };
+      reflectionPrompts = [];
+    }
+    console.log(`[step 4/5] Merged findings: ${mergedFindings.length} total`);
 
     // Step 5: Assemble response (matches docs/api-docs.md contract)
     const analysisId = `an_${crypto.randomBytes(5).toString("hex")}`;
-
-    // Compute risk score from rule engine findings using severity weights
-    const SEVERITY_SCORES = { high: 25, medium: 12, low: 5 };
-    const riskScore = Math.min(100, findings.reduce((sum, f) => sum + (SEVERITY_SCORES[f.severity] || 0), 0));
-    const riskLevel = riskScore <= 33 ? "low" : riskScore <= 66 ? "medium" : "high";
-
-    const RISK_SUMMARIES = {
-      low: "No major red flags detected. Proceed with normal caution.",
-      medium: "Some concerning signals were detected. Verify details before committing.",
-      high: "Multiple red flags detected. Strong recommendation to verify or walk away.",
-    };
-
-    // Generate reflection prompts based on detected findings
-    const reflectionPrompts = [];
-    const flagIds = new Set(findings.map((f) => f.id));
-
-    if (flagIds.has("price_drop_extreme") || flagIds.has("free_or_near_free")) {
-      reflectionPrompts.push({ id: "rp_price", prompt: "Are you evaluating this price on its own merits, or does it just look good compared to the 'original' price?" });
-    }
-    if (flagIds.has("urgency_language")) {
-      reflectionPrompts.push({ id: "rp_urgency", prompt: "Why does this need to happen so quickly? Would a legitimate seller pressure you this way?" });
-    }
-    if (flagIds.has("seller_unverified") || flagIds.has("seller_no_photo") || flagIds.has("seller_few_listings")) {
-      reflectionPrompts.push({ id: "rp_trust", prompt: "What makes you trust this seller? Would you trust a stranger on the street with this same deal?" });
-    }
-    if (flagIds.has("contact_off_platform") || flagIds.has("request_deposit") || flagIds.has("unusual_payment_method")) {
-      reflectionPrompts.push({ id: "rp_payment", prompt: "Why would a legitimate seller need you to pay or communicate outside the platform?" });
-    }
-    if (reflectionPrompts.length === 0 && findings.length > 0) {
-      reflectionPrompts.push({ id: "rp_general", prompt: "If this deal seems too good to be true, what detail would explain why?" });
-    }
-
-    // Generate quiz questions based on detected findings (up to 3)
-    const quizQuestions = buildQuizQuestions(findings);
 
     const response = {
       analysis_id: analysisId,
@@ -238,18 +250,15 @@ async function analyzeListing(req, res, next) {
         platform: "kijiji",
         url,
       },
-      listing: listingData,
-      risk: {
-        score: riskScore,
-        level: riskLevel,
-        summary: RISK_SUMMARIES[riskLevel],
-      },
-      findings,
+      listing: listingData, // DEBUG: not in API contract — remove in Phase 5
+      risk,
+      findings: mergedFindings,
       reflection_prompts: reflectionPrompts,
       quiz: { questions: quizQuestions },
     };
 
     cache.set(url, response);
+    console.log(`[step 5/5] Done in ${Date.now() - startTime}ms — risk: ${risk.level} (${risk.score}/100)\n`);
     return res.status(200).json(response);
   } catch (err) {
     if (err.statusCode && err.code) {

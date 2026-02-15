@@ -9,11 +9,22 @@
 // 6. user_context: if present must be string, trim; default to null
 
 function validateAnalysis(req, res, next) {
+  const contentType = req.headers["content-type"];
+  if (!contentType || !contentType.includes("application/json")) {
+    return res.status(415).json({
+      error: {
+        code: "UNSUPPORTED_MEDIA_TYPE",
+        message: "Content-Type must be application/json.",
+        details: {},
+      },
+    });
+  }
+
   const { url, user_context } = req.body;
 
   if (typeof url !== "string" || url.trim().length === 0) {
     return res.status(400).json({
-      error: { code: "INVALID_REQUEST", message: "A non-empty 'url' string is required." },
+      error: { code: "INVALID_REQUEST", message: "A non-empty 'url' string is required.", details: {} },
     });
   }
 
@@ -22,13 +33,13 @@ function validateAnalysis(req, res, next) {
     parsed = new URL(url.trim());
   } catch {
     return res.status(400).json({
-      error: { code: "INVALID_REQUEST", message: "Invalid URL format." },
+      error: { code: "INVALID_REQUEST", message: "Invalid URL format.", details: {} },
     });
   }
 
   if (!parsed.hostname.includes("kijiji.ca")) {
     return res.status(422).json({
-      error: { code: "UNSUPPORTED_URL", message: "Only Kijiji URLs are supported." },
+      error: { code: "UNSUPPORTED_URL", message: "Only Kijiji URLs are supported.", details: {} },
     });
   }
 
@@ -37,6 +48,7 @@ function validateAnalysis(req, res, next) {
       error: {
         code: "UNSUPPORTED_URL",
         message: "URL does not appear to be a Kijiji listing. Expected path containing '/v-'.",
+        details: {},
       },
     });
   }
@@ -51,7 +63,7 @@ function validateAnalysis(req, res, next) {
   if (user_context !== undefined && user_context !== null) {
     if (typeof user_context !== "string") {
       return res.status(400).json({
-        error: { code: "INVALID_REQUEST", message: "'user_context' must be a string if provided." },
+        error: { code: "INVALID_REQUEST", message: "'user_context' must be a string if provided.", details: {} },
       });
     }
     req.body.user_context = user_context.trim() || null;

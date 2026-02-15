@@ -285,15 +285,7 @@ Add `helmet` middleware for HTTP security headers.
 
 Validate all required env vars at startup (not just `OPENAI_API_KEY`).
 
-### 5D. Remove debug output
 
-Remove the `listing` field from the API response (it's not in the `docs/api-docs.md` contract — we added it for debugging). Or keep it if useful for the frontend.
-
-### 5E. Deploy
-
-- Railway deployment (base URL already updated to `sketchysnifferapi-production.up.railway.app`)
-- Verify production environment variables
-- Test production endpoint
 
 ---
 
