@@ -148,14 +148,34 @@ function extractFromNextData($) {
       };
     }
 
-    // Category — build hierarchy from Apollo category refs
-    // TODO: Implement — resolve category chain from apolloState refs
-    // For now, use categoryId as a placeholder
-    result.categoryId = listingNode.categoryId;
+    // Category — resolve hierarchy from Apollo Category refs
+    // The listing's category node has categoryPaths: [{ __ref: "Category:10" }, ...]
+    // Each ref points to a Category node with a localizedName key
+    const categoryNode = apolloState[`Category:${listingNode.categoryId}`];
+    if (categoryNode?.categoryPaths) {
+      result.category = categoryNode.categoryPaths
+        .map((ref) => {
+          const catNode = apolloState[ref.__ref];
+          if (!catNode) return undefined;
+          // localizedName key is dynamic, e.g. localizedName({"locale":"en-CA"})
+          const nameKey = Object.keys(catNode).find((k) => k.startsWith("localizedName"));
+          return nameKey ? catNode[nameKey] : undefined;
+        })
+        .filter(Boolean);
+    }
 
-    // Condition — extract from attributes array
-    // TODO: Implement — find attribute with canonicalName === "condition"
-    // result.condition = ...
+    // Attributes — extract condition and payment info from attributes.all[]
+    const attributes = listingNode.attributes?.all || [];
+
+    function getAttr(canonicalName) {
+      return attributes.find((a) => a.canonicalName === canonicalName);
+    }
+
+    // Condition
+    const conditionAttr = getAttr("condition");
+    if (conditionAttr?.values?.[0]) {
+      result.condition = conditionAttr.values[0];
+    }
 
     // Images
     if (listingNode.imageUrls) {
@@ -185,10 +205,16 @@ function extractFromNextData($) {
       adSource: listingNode.adSource,
     };
 
-    // Payment attributes
-    // TODO: Implement — extract from attributes array
-    // Look for canonicalName: "cashaccepted", "cashless", "shipping"
-    // result.payment = { cashAccepted, cashless, shipping }
+    // Payment attributes — canonicalValues are "true"/"false" strings
+    const cashAccepted = getAttr("cashaccepted");
+    const cashless = getAttr("cashless");
+    const shipping = getAttr("shipping");
+
+    result.payment = {
+      cashAccepted: cashAccepted?.canonicalValues?.[0] === "true",
+      cashless: cashless?.canonicalValues?.[0] === "true",
+      shipping: shipping?.canonicalValues?.[0] === "true",
+    };
   } catch {
     // Malformed __NEXT_DATA__; skip
   }
@@ -245,10 +271,12 @@ async function scrapeListing(url) {
     description: jsonLdData.description || nextData.description || metaData.description,
     price: nextData.price || jsonLdData.price || metaData.price,
     location: nextData.location || jsonLdData.location || metaData.location,
-    categoryId: nextData.categoryId,
+    category: nextData.category,
+    condition: nextData.condition,
     images: nextData.images,
     seller: nextData.seller,
     listing: nextData.listing,
+    payment: nextData.payment,
   };
 }
 
