@@ -5,6 +5,14 @@ const ruleEngine = require("../services/ruleEngine");
 const RED_FLAGS = require("../config/redFlags");
 const analysisService = require("../services/analysisService");
 
+// Severity weights for rule-only fallback scoring (matches docs/scam-detecting-plan.md).
+const SEVERITY_WEIGHTS = { high: 25, medium: 12, low: 5 };
+
+function calculateRuleOnlyScore(preFlags) {
+  const raw = preFlags.reduce((sum, f) => sum + (SEVERITY_WEIGHTS[f.severity] || 0), 0);
+  return Math.min(raw, 100);
+}
+
 // POST /api/analyses handler
 //
 // Hybrid pipeline:
@@ -14,7 +22,7 @@ const analysisService = require("../services/analysisService");
 //   4. Merge rule flags + AI findings into final response
 //   5. Cache and return
 //
-// All steps implemented.
+// If the AI call fails, falls back to rule-engine-only response (4A hardening).
 
 async function analyzeListing(req, res, next) {
   const { url, user_context: userContext } = req.body;
@@ -63,15 +71,38 @@ async function analyzeListing(req, res, next) {
       };
     });
 
-    // Step 3: AI analysis (subjective)
-    console.log("[step 3/5] Calling OpenAI...");
-    const aiStart = Date.now();
-    const aiResult = await analysisService.analyzeListing(listingData, preFlags, userContext);
-    console.log(`[step 3/5] AI analysis in ${Date.now() - aiStart}ms — ${aiResult.findings.length} finding(s), risk score: ${aiResult.risk.score}`);
+    // Step 3: AI analysis (subjective) — with graceful fallback
+    let aiResult = null;
+    try {
+      console.log("[step 3/5] Calling OpenAI...");
+      const aiStart = Date.now();
+      aiResult = await analysisService.analyzeListing(listingData, preFlags, userContext);
+      console.log(`[step 3/5] AI analysis in ${Date.now() - aiStart}ms — ${aiResult.findings.length} finding(s), risk score: ${aiResult.risk.score}`);
+    } catch (aiErr) {
+      console.warn(`[step 3/5] AI analysis failed (${aiErr.code || "UNKNOWN"}): ${aiErr.message}`);
+    }
 
     // Step 4: Merge rule findings + AI findings
-    const mergedFindings = [...findings, ...aiResult.findings];
-    console.log(`[step 4/5] Merged findings: ${mergedFindings.length} total (${findings.length} rule + ${aiResult.findings.length} AI)`);
+    let mergedFindings;
+    let risk;
+    let reflectionPrompts;
+
+    if (aiResult) {
+      mergedFindings = [...findings, ...aiResult.findings];
+      risk = aiResult.risk;
+      reflectionPrompts = aiResult.reflection_prompts;
+    } else {
+      // Fallback: rule-engine-only response
+      mergedFindings = findings;
+      const score = calculateRuleOnlyScore(preFlags);
+      risk = {
+        score,
+        level: score <= 33 ? "low" : score <= 66 ? "medium" : "high",
+        summary: "AI analysis unavailable. Rule-based checks completed.",
+      };
+      reflectionPrompts = [];
+    }
+    console.log(`[step 4/5] Merged findings: ${mergedFindings.length} total`);
 
     // Step 5: Assemble response (matches docs/api-docs.md contract)
     const analysisId = `an_${crypto.randomBytes(5).toString("hex")}`;
@@ -84,14 +115,14 @@ async function analyzeListing(req, res, next) {
         url,
       },
       listing: listingData, // DEBUG: not in API contract — remove in Phase 5
-      risk: aiResult.risk,
+      risk,
       findings: mergedFindings,
-      reflection_prompts: aiResult.reflection_prompts,
+      reflection_prompts: reflectionPrompts,
       quiz: { questions: [] },
     };
 
     cache.set(url, response);
-    console.log(`[step 5/5] Done in ${Date.now() - startTime}ms — risk: ${aiResult.risk.level} (${aiResult.risk.score}/100)\n`);
+    console.log(`[step 5/5] Done in ${Date.now() - startTime}ms — risk: ${risk.level} (${risk.score}/100)\n`);
     return res.status(200).json(response);
   } catch (err) {
     if (err.statusCode && err.code) {

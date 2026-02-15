@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const analysesRouter = require("./routes/analyses");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -8,7 +9,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/analyses", analysesRouter);
+const analysisLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: {
+        code: "RATE_LIMITED",
+        message: "Too many requests. Please try again later.",
+        details: {},
+      },
+    });
+  },
+});
+
+app.use("/api/analyses", analysisLimiter, analysesRouter);
 
 app.use(errorHandler);
 
