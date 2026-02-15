@@ -1,10 +1,6 @@
 const OpenAI = require("openai");
 
-// Validate API key at import time — server won't start without it
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("Missing OPENAI_API_KEY environment variable");
-}
-
+// OPENAI_API_KEY is validated at startup in server.js.
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const OPENAI_MODEL = "gpt-4o";
