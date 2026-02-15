@@ -1,4 +1,4 @@
-**Base URL:** `https://sketchysniffer.com/api/`
+**Base URL:** `https://sketchysnifferapi-production.up.railway.app/api/`
 
 **Content-Type:** `application/json`
 
