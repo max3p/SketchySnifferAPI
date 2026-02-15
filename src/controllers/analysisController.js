@@ -40,6 +40,7 @@ async function analyzeListing(req, res, next) {
         error: {
           code: "UNSUPPORTED_URL",
           message: "Could not extract listing data from the provided URL.",
+          details: {},
         },
       });
     }
@@ -82,7 +83,7 @@ async function analyzeListing(req, res, next) {
         platform: "kijiji",
         url,
       },
-      listing: listingData,
+      listing: listingData, // DEBUG: not in API contract — remove in Phase 5
       risk: aiResult.risk,
       findings: mergedFindings,
       reflection_prompts: aiResult.reflection_prompts,
