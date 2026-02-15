@@ -46,7 +46,7 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["seller_unverified", "seller_no_photo", "seller_few_listings"],
+    triggerIds: ["seller_unverified", "seller_no_photo", "seller_few_listings", "social_proof_absence"],
     question: {
       id: "q_seller",
       prompt: "You find a great deal from a seller with no profile photo and no verification. What should you do?",
@@ -65,7 +65,7 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["urgency_language"],
+    triggerIds: ["urgency_language", "urgency_bias", "scarcity_bias", "loss_aversion"],
     question: {
       id: "q_urgency",
       prompt: "A listing says \"Must sell today — first come first served!\" How should this affect your decision?",
@@ -103,7 +103,7 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["price_drop_extreme", "free_or_near_free"],
+    triggerIds: ["price_drop_extreme", "free_or_near_free", "price_too_low", "anchoring_bias"],
     question: {
       id: "q_price",
       prompt: "An item normally worth $800 is listed for $200. What is the most important thing to consider?",
@@ -122,7 +122,7 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["no_images", "single_image"],
+    triggerIds: ["no_images", "single_image", "stock_photos_suspected"],
     question: {
       id: "q_images",
       prompt: "A high-value listing has only one photo (or none). What does this suggest?",
@@ -137,6 +137,101 @@ const QUIZ_BANK = [
         correct_body: "Legitimate sellers of valuable items almost always provide multiple photos. Requesting more is a simple way to test authenticity.",
         incorrect_title: "Consider this",
         incorrect_body: "Scam listings often use a single stock photo or no images at all. Multiple original photos are a basic trust signal.",
+      },
+    },
+  },
+  {
+    triggerIds: ["no_cash_accepted"],
+    question: {
+      id: "q_cashless",
+      prompt: "A seller insists on cashless payment only for an in-person item. What should you consider?",
+      options: [
+        { id: "a", text: "Cashless is more convenient — go ahead" },
+        { id: "b", text: "Ask why cash isn't accepted and consider meeting at a safe location with a traceable payment method" },
+        { id: "c", text: "It doesn't matter how you pay as long as you get the item" },
+      ],
+      correct_option_id: "b",
+      feedback: {
+        correct_title: "Good awareness",
+        correct_body: "Refusing cash for in-person sales can be a tactic to avoid traceable transactions or to use reversible payment methods.",
+        incorrect_title: "Think twice",
+        incorrect_body: "Sellers who refuse cash may be setting up payment fraud. Cash at a public meetup is often the safest option.",
+      },
+    },
+  },
+  {
+    triggerIds: ["vague_description", "description_mismatch", "excessive_shipping_language"],
+    question: {
+      id: "q_description",
+      prompt: "A listing has a vague description that doesn't mention the item's condition or history. How should you proceed?",
+      options: [
+        { id: "a", text: "The photos tell you everything you need to know" },
+        { id: "b", text: "Ask the seller specific questions about condition, age, and reason for selling" },
+        { id: "c", text: "A short description just means the seller is busy" },
+      ],
+      correct_option_id: "b",
+      feedback: {
+        correct_title: "Smart move",
+        correct_body: "Detailed questions help verify the seller actually has the item and knows its history. Scam listings often can't answer specifics.",
+        incorrect_title: "Be cautious",
+        incorrect_body: "Vague descriptions are a common tactic in scam listings. Legitimate sellers are usually happy to provide details.",
+      },
+    },
+  },
+  {
+    triggerIds: ["too_good_to_be_true"],
+    question: {
+      id: "q_toogood",
+      prompt: "A deal seems almost too good to be true — great price, popular item, motivated seller. What's the smartest move?",
+      options: [
+        { id: "a", text: "Act fast before someone else grabs it" },
+        { id: "b", text: "Slow down, verify the seller and item independently before committing" },
+        { id: "c", text: "Trust your gut — if it feels like a deal, it probably is" },
+      ],
+      correct_option_id: "b",
+      feedback: {
+        correct_title: "Exactly right",
+        correct_body: "Scammers engineer listings to feel irresistible. Pausing to verify is your strongest defense.",
+        incorrect_title: "Hold on",
+        incorrect_body: "When everything looks perfect, that's exactly when you should be most careful. Scams are designed to feel like great deals.",
+      },
+    },
+  },
+  {
+    triggerIds: ["short_listing_duration", "promoted_cheap_item"],
+    question: {
+      id: "q_listing",
+      prompt: "A listing was posted recently and expires in just a few days, with a paid promotion on a cheap item. What might this suggest?",
+      options: [
+        { id: "a", text: "The seller is just eager to sell quickly" },
+        { id: "b", text: "Short durations and promotions on cheap items can be signs of a throwaway scam listing" },
+        { id: "c", text: "Promoted listings are always more trustworthy" },
+      ],
+      correct_option_id: "b",
+      feedback: {
+        correct_title: "Sharp observation",
+        correct_body: "Scammers often create short-lived, promoted listings to maximize visibility before the listing is flagged or removed.",
+        incorrect_title: "Look closer",
+        incorrect_body: "Paying to promote a very cheap item is unusual for legitimate sellers. Combined with a short duration, this pattern is worth questioning.",
+      },
+    },
+  },
+  {
+    triggerIds: ["authority_bias"],
+    question: {
+      id: "q_authority",
+      prompt: "A listing uses very professional language, brand-name dropping, and impressive credentials. Should you trust it more?",
+      options: [
+        { id: "a", text: "Professional listings are always more reliable" },
+        { id: "b", text: "Verify claims independently — professional language can be used to build false trust" },
+        { id: "c", text: "Only trust it if the seller is verified" },
+      ],
+      correct_option_id: "b",
+      feedback: {
+        correct_title: "Well reasoned",
+        correct_body: "Authority bias makes us trust professional-sounding content. Scammers exploit this by mimicking legitimate business language.",
+        incorrect_title: "Reconsider",
+        incorrect_body: "Polished language doesn't guarantee legitimacy. Scammers often use professional templates to appear trustworthy.",
       },
     },
   },
@@ -239,6 +334,8 @@ async function analyzeListing(req, res, next) {
       reflectionPrompts = [];
     }
     console.log(`[step 4/5] Merged findings: ${mergedFindings.length} total`);
+
+    const quizQuestions = buildQuizQuestions(mergedFindings);
 
     // Step 5: Assemble response (matches docs/api-docs.md contract)
     const analysisId = `an_${crypto.randomBytes(5).toString("hex")}`;
