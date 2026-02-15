@@ -1,8 +1,6 @@
-const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 const cache = require("../config/cache");
 const scraperService = require("../services/scraperService");
-const ruleEngine = require("../services/ruleEngine");
-const analysisService = require("../services/analysisService");
 
 // POST /api/analyses handler
 //
@@ -12,6 +10,8 @@ const analysisService = require("../services/analysisService");
 //   3. Send listing data + preFlags to AI analysis (analysisService)
 //   4. Merge rule flags + AI findings into final response
 //   5. Cache and return
+//
+// Steps 2-4 return placeholder data for now.
 
 async function analyzeListing(req, res, next) {
   const { url, user_context: userContext } = req.body;
@@ -35,23 +35,17 @@ async function analyzeListing(req, res, next) {
     }
 
     // Step 2: Rule engine (deterministic)
-    // TODO: Implement — call ruleEngine.evaluateRules(listingData)
-    // Returns preFlags[] — array of { id, severity, evidence }
+    // TODO: call ruleEngine.evaluateRules(listingData)
     const preFlags = [];
 
     // Step 3: AI analysis (subjective)
-    // TODO: Implement — call analysisService.analyzeListing(listingData, preFlags, userContext)
-    // Returns { risk, findings, reflection_prompts }
-    const aiResult = {};
+    // TODO: call analysisService.analyzeListing(listingData, preFlags, userContext)
 
     // Step 4: Merge
-    // TODO: Implement — combine preFlags into aiResult.findings[]
-    // Each preFlag becomes a finding with type: "red_flag"
-    // AI findings are already in aiResult.findings[]
-    // Final findings = rule findings + AI findings
+    // TODO: combine preFlags + AI findings
 
-    // Step 5: Assemble response
-    const analysisId = `an_${uuidv4().replace(/-/g, "").slice(0, 10)}`;
+    // Step 5: Assemble response (matches docs/api-docs.md contract)
+    const analysisId = `an_${crypto.randomBytes(5).toString("hex")}`;
 
     const response = {
       analysis_id: analysisId,
@@ -60,8 +54,12 @@ async function analyzeListing(req, res, next) {
         platform: "kijiji",
         url,
       },
-      // TODO: Populate from merged results
-      risk: {},
+      listing: listingData,
+      risk: {
+        score: 0,
+        level: "low",
+        summary: "Analysis not yet implemented.",
+      },
       findings: [],
       reflection_prompts: [],
       quiz: { questions: [] },
