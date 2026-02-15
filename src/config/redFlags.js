@@ -30,12 +30,6 @@ const RED_FLAGS = [
     description: "Unusual payment method detected: gift card, crypto, bitcoin, wire transfer, Western Union, MoneyGram, Zelle" },
 
   // ── Rule Engine: Seller ─────────────────────────────────────────
-  { id: "seller_unverified", engine: "rule", severity: "low",
-    label: "Unverified seller account",
-    description: "Seller account is not verified" },
-  { id: "seller_no_photo", engine: "rule", severity: "low",
-    label: "No seller profile photo",
-    description: "Seller has no profile photo" },
   { id: "seller_few_listings", engine: "rule", severity: "medium",
     label: "Seller has few listings",
     description: "Seller has 2 or fewer active listings" },

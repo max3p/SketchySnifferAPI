@@ -27,7 +27,7 @@ Respond with a single JSON object matching this exact schema:
   },
   "findings": [
     {
-      "id": "<flag ID from AI FLAG DEFINITIONS, or a cognitive bias ID: scarcity_bias, urgency_bias, anchoring_bias, authority_bias, social_proof_absence, loss_aversion>",
+      "id": "<flag ID from AI FLAG DEFINITIONS, or a cognitive bias ID: scarcity_bias, urgency_bias, anchoring_bias, authority_bias, loss_aversion>",
       "type": "<red_flag|cognitive_bias>",
       "header": "<short title, 3-8 words>",
       "summary": "<one-line summary>",
@@ -57,7 +57,6 @@ Look for these psychological manipulation tactics in the listing:
 - Urgency bias (urgency_bias): "Must sell today", "moving tomorrow", "act fast", pressuring quick action.
 - Anchoring bias (anchoring_bias): Showing a high original price next to a low current price to make the deal seem better than it is.
 - Authority bias (authority_bias): Overly professional language, brand-name dropping, or credentials to build unearned trust.
-- Social proof absence (social_proof_absence): No reviews, no seller history, no verification, indicating the absence of trust signals.
 - Loss aversion (loss_aversion): "Someone else is interested", "don't miss out", creating fear of missing the deal.
 
 CONSTRAINTS:

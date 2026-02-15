@@ -37,10 +37,10 @@ Every field the scraper can extract, mapped to its scam-detection value.
 |---|---|---|
 | `posterInfo.posterId` | Apollo `posterInfo.posterId` | Seller identification |
 | `posterInfo.sellerType` | Apollo `posterInfo.sellerType` (FSBO/DEALER) | Context for expectations |
-| `posterInfo.verified` | Apollo `posterInfo.verified` | **Key trust signal**, unverified = higher risk |
+| `posterInfo.verified` | Apollo `posterInfo.verified` | Context for seller profile (note: most Kijiji sellers are unverified, so this is not a scam signal on its own) |
 | `profile.name` | Apollo `StandardProfileV2.name` | Generic/suspicious name detection |
 | `profile.numberOfListings` | Apollo `StandardProfileV2.numberOfListings` | **Key trust signal**, very few listings = higher risk |
-| `profile.imageUrl` | Apollo `StandardProfileV2.imageUrl` | No profile photo = higher risk |
+| `profile.imageUrl` | Apollo `StandardProfileV2.imageUrl` | Context for seller profile (note: most Kijiji sellers lack profile photos, so this is not a scam signal on its own) |
 | `profile.userType` | Apollo `StandardProfileV2.userType` | FSBO vs dealer context |
 
 ### Listing Metadata
@@ -94,10 +94,10 @@ Every field the scraper can extract, mapped to its scam-detection value.
 
 ### Category C: Seller Profile Red Flags
 
+> **Note:** `seller_unverified` and `seller_no_photo` were removed because most Kijiji sellers are unverified and lack profile photos. These are platform norms, not scam indicators.
+
 | ID | Engine | Red Flag | Detection Strategy | Severity |
 |---|---|---|---|---|
-| `seller_unverified` | Rule | Seller account is not verified | `posterInfo.verified === false`. | low |
-| `seller_no_photo` | Rule | Seller has no profile photo | `profile.imageUrl === null`. | low |
 | `seller_few_listings` | Rule | Seller has very few active listings (1-2) | `profile.numberOfListings <= 2`. Low listing count combined with a high-value item is suspicious. New accounts created to post a single scam listing are common. | medium |
 
 ### Category D: Image Red Flags
@@ -129,7 +129,7 @@ These aren't scam indicators per se, but psychological triggers that scammers ex
 | **Urgency Bias** | "Must sell today", "moving tomorrow", "act fast" | "Why does this need to happen so quickly? Would a legitimate seller pressure you this way?" |
 | **Anchoring Bias** | Price drop from $850 → $400 shown prominently | "Are you evaluating this price on its own merits, or does it just look good compared to the 'original' price? Is $400 actually a fair price for this item?" |
 | **Authority Bias** | Overly professional language, brand name dropping | "Does professional-sounding language make you trust this seller more than you should?" |
-| **Social Proof Absence** | No reviews, no profile history | "Would you trust a stranger on the street with this deal? What makes this different?" |
+| ~~**Social Proof Absence**~~ | ~~No reviews, no profile history~~ | Removed: most Kijiji sellers lack verification and profile photos, making this a platform norm rather than a scam signal. |
 | **Loss Aversion** | "Someone else is interested", "don't miss out" | "What would you actually lose by waiting and verifying? Compare that to what you'd lose if this is a scam." |
 
 ---
@@ -151,8 +151,6 @@ Scraped Listing Data
 │  Data checks:                                       │
 │    imageUrls.length === 0        → no_images        │
 │    imageUrls.length === 1        → single_image     │
-│    verified === false            → seller_unverified │
-│    imageUrl === null             → seller_no_photo   │
 │    numberOfListings <= 2         → seller_few_listings│
 │    (orig - curr) / orig > 0.6   → price_drop_extreme│
 │    price <= 10                   → free_or_near_free │
@@ -236,10 +234,6 @@ const RED_FLAGS = [
     description: "Unusual payment method detected: gift card, crypto, bitcoin, wire transfer, Western Union, MoneyGram, Zelle" },
 
   // ── Rule Engine: Seller ─────────────────────────────────────────
-  { id: "seller_unverified", engine: "rule", severity: "low",
-    description: "Seller account is not verified" },
-  { id: "seller_no_photo", engine: "rule", severity: "low",
-    description: "Seller has no profile photo" },
   { id: "seller_few_listings", engine: "rule", severity: "medium",
     description: "Seller has 2 or fewer active listings" },
 
@@ -277,7 +271,7 @@ const RED_FLAGS = [
 
 | Engine | Count | Examples |
 |---|---|---|
-| `rule` (deterministic) | 14 flags | `no_images`, `seller_unverified`, `urgency_language`, `contact_off_platform` |
+| `rule` (deterministic) | 12 flags | `no_images`, `seller_few_listings`, `urgency_language`, `contact_off_platform` |
 | `ai` (subjective) | 6 flags | `price_too_low`, `vague_description`, `description_mismatch`, `too_good_to_be_true` |
 
 ---
@@ -292,10 +286,8 @@ The scraper currently extracts `{ title, description, price, location }` but the
 |---|---|---|
 | `imageUrls` | `StandardListing.imageUrls` | Image count is a high-value signal |
 | `imageCount` | Derived from above | Quick check without passing full URLs |
-| `seller.verified` | `posterInfo.verified` | Key trust signal |
 | `seller.numberOfListings` | `StandardProfileV2.numberOfListings` | Key trust signal |
 | `seller.name` | `StandardProfileV2.name` | Profile completeness check |
-| `seller.imageUrl` | `StandardProfileV2.imageUrl` | Profile completeness check |
 | `category` | `Category` refs (name chain) | Price context (e.g. "Ski" vs "Electronics") |
 | `price.originalAmount` | `StandardAmountPrice.originalAmount` | Price drop analysis |
 | `priceDrop` | `StandardListingFlags.priceDrop` | Anchoring bias detection |
@@ -392,7 +384,7 @@ The AI should produce a risk score (0-100) based on weighted flag contributions:
 |---|---|---|
 | High | 20-30 points each | `contact_off_platform`, `request_deposit`, `no_images` |
 | Medium | 10-15 points each | `urgency_language`, `vague_description`, `seller_few_listings` |
-| Low | 3-7 points each | `seller_unverified`, `single_image`, `seller_no_photo` |
+| Low | 3-7 points each | `single_image`, `short_listing_duration`, `promoted_cheap_item` |
 
 **Risk Levels:**
 - **0-33: Low**, no major red flags. Proceed with normal caution.

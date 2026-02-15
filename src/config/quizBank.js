@@ -24,12 +24,12 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["seller_unverified", "seller_no_photo", "seller_few_listings", "social_proof_absence"],
+    triggerIds: ["seller_few_listings"],
     question: {
       id: "q_seller",
-      prompt: "You find a great deal from a seller with no profile photo and no verification. What should you do?",
+      prompt: "You find a great deal from a seller with very few listings. What should you do?",
       options: [
-        { id: "a", text: "It's probably fine, lots of people don't bother with profiles" },
+        { id: "a", text: "It's probably fine, everyone starts somewhere" },
         { id: "b", text: "Check their other listings and ask questions before committing" },
         { id: "c", text: "Ignore the profile and focus only on the item" },
       ],
@@ -38,7 +38,7 @@ const QUIZ_BANK = [
         correct_title: "Good instinct",
         correct_body: "Verifying the seller's history and asking questions helps distinguish legitimate sellers from throwaway scam accounts.",
         incorrect_title: "Think again",
-        incorrect_body: "Unverified accounts with no photo and few listings are a common pattern for disposable scam profiles.",
+        incorrect_body: "Accounts with very few listings can be disposable scam profiles. Asking questions and checking history is always worth the effort.",
       },
     },
   },

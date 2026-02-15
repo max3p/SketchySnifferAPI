@@ -61,30 +61,6 @@ function checkFreeOrNearFree(listingData) {
   };
 }
 
-function checkSellerUnverified(listingData) {
-  if (!listingData.seller) return null;
-  if (listingData.seller.verified !== false) return null;
-
-  const flag = getFlag("seller_unverified");
-  return {
-    id: flag.id,
-    severity: flag.severity,
-    evidence: "Seller account is not verified",
-  };
-}
-
-function checkSellerNoPhoto(listingData) {
-  if (!listingData.seller) return null;
-  if (listingData.seller.hasProfilePhoto !== false) return null;
-
-  const flag = getFlag("seller_no_photo");
-  return {
-    id: flag.id,
-    severity: flag.severity,
-    evidence: "Seller has no profile photo",
-  };
-}
-
 function checkSellerFewListings(listingData) {
   if (!listingData.seller) return null;
   if (listingData.seller.numberOfListings == null) return null;
@@ -287,8 +263,6 @@ function checkUnusualPaymentMethod(listingData) {
 const CHECK_MAP = {
   price_drop_extreme: checkPriceDropExtreme,
   free_or_near_free: checkFreeOrNearFree,
-  seller_unverified: checkSellerUnverified,
-  seller_no_photo: checkSellerNoPhoto,
   seller_few_listings: checkSellerFewListings,
   no_images: checkNoImages,
   single_image: checkSingleImage,
