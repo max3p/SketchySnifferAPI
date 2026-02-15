@@ -1,8 +1,8 @@
 {
   "name": "sketchysniffer",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI-powered scam detection API for online marketplace listings",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"

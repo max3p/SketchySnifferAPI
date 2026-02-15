@@ -130,8 +130,9 @@ These aren't scam indicators per se, but psychological triggers that scammers ex
 | **Urgency Bias** | "Must sell today", "moving tomorrow", "act fast" | "Why does this need to happen so quickly? Would a legitimate seller pressure you this way?" |
 | **Anchoring Bias** | Price drop from $850 → $400 shown prominently | "Are you evaluating this price on its own merits, or does it just look good compared to the 'original' price? Is $400 actually a fair price for this item?" |
 | **Authority Bias** | Overly professional language, brand name dropping | "Does professional-sounding language make you trust this seller more than you should?" |
-| ~~**Social Proof Absence**~~ | ~~No reviews, no profile history~~ | Removed: most Kijiji sellers lack verification and profile photos, making this a platform norm rather than a scam signal. |
 | **Loss Aversion** | "Someone else is interested", "don't miss out" | "What would you actually lose by waiting and verifying? Compare that to what you'd lose if this is a scam." |
+
+> **Note:** Social Proof Absence was removed as a cognitive bias because most Kijiji sellers lack verification and profile photos, making this a platform norm rather than a scam signal.
 
 ---
 
@@ -154,7 +155,6 @@ Scraped Listing Data
 │    imageUrls.length === 1        → single_image     │
 │    numberOfListings <= 2         → seller_few_listings│
 │    (orig - curr) / orig > 0.6   → price_drop_extreme│
-│                                                      │
 │    endDate - activation < 7d     → short_listing_duration│
 │    topAd && price < 50           → promoted_cheap_item│
 │    cashless && !cashAccepted     → no_cash_accepted  │

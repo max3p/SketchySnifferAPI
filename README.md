@@ -7,11 +7,21 @@ An AI-powered decision reflection tool for online marketplace listings. Users pa
 ### Prerequisites
 
 - Node.js
+- An [OpenAI API key](https://platform.openai.com/api-keys)
 
 ### Installation
 
 ```bash
 npm install
+```
+
+### Environment Setup
+
+Create a `.env` file in the project root:
+
+```
+PORT=3000
+OPENAI_API_KEY=your-api-key-here
 ```
 
 ### Running
@@ -24,11 +34,7 @@ npm run dev
 npm start
 ```
 
-The API runs on `http://localhost:3000` by default. Configure the port via `.env`:
-
-```
-PORT=3000
-```
+The API runs on `http://localhost:3000` by default.
 
 ## API
 
@@ -38,4 +44,4 @@ PORT=3000
 | ------ | ------------ | ------------------------------------------------ |
 | POST   | `/analyses`  | Analyze a marketplace listing URL for scam risks |
 
-See [api-docs.md](api-docs.md) for full request/response documentation.
+See [api-docs.md](docs/api-docs.md) for full request/response documentation.
