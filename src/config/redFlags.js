@@ -11,9 +11,6 @@ const RED_FLAGS = [
   { id: "price_drop_extreme", engine: "rule", severity: "medium",
     label: "Extreme price drop",
     description: "Price drop exceeds 60% of original price" },
-  { id: "free_or_near_free", engine: "rule", severity: "high",
-    label: "Free or near-free item",
-    description: "Item listed for $10 or less" },
 
   // ── Rule Engine: Description (keyword/regex) ────────────────────
   { id: "urgency_language", engine: "rule", severity: "medium",

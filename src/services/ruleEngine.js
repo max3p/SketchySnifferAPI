@@ -47,20 +47,6 @@ function checkPriceDropExtreme(listingData) {
   };
 }
 
-function checkFreeOrNearFree(listingData) {
-  const price = listingData.price;
-  if (!price || typeof price === "string") return null;
-  if (price.amount == null) return null;
-  if (price.amount > 10) return null;
-
-  const flag = getFlag("free_or_near_free");
-  return {
-    id: flag.id,
-    severity: flag.severity,
-    evidence: `Listed at $${price.amount}`,
-  };
-}
-
 function checkSellerFewListings(listingData) {
   if (!listingData.seller) return null;
   if (listingData.seller.numberOfListings == null) return null;
@@ -262,7 +248,6 @@ function checkUnusualPaymentMethod(listingData) {
 // Maps flag IDs to their check functions.
 const CHECK_MAP = {
   price_drop_extreme: checkPriceDropExtreme,
-  free_or_near_free: checkFreeOrNearFree,
   seller_few_listings: checkSellerFewListings,
   no_images: checkNoImages,
   single_image: checkSingleImage,

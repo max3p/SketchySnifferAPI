@@ -76,7 +76,8 @@ Every field the scraper can extract, mapped to its scam-detection value.
 |---|---|---|---|---|
 | `price_too_low` | AI | Price significantly below market value for the item category | AI compares price against category norms and item description. Items priced 50%+ below expected value are suspicious. | high |
 | `price_drop_extreme` | Rule | Unrealistically large price drop (e.g. $850 → $400) | Calculate `(originalAmount - amount) / originalAmount`. Drops > 60% are suspicious. | medium |
-| `free_or_near_free` | Rule | High-value item listed for free or near-free | `price.amount <= 10`. Items listed at $0-$10 are almost always scams. | high |
+
+> **Note:** `free_or_near_free` was removed because a low price alone is not a scam signal for genuinely low-value items. The AI's `price_too_low` and `too_good_to_be_true` flags handle this with category context instead.
 
 **Note:** `price_anchoring` (original price shown to create false sense of savings) is handled as a cognitive bias rather than a red flag. See section 3.
 
@@ -153,7 +154,7 @@ Scraped Listing Data
 │    imageUrls.length === 1        → single_image     │
 │    numberOfListings <= 2         → seller_few_listings│
 │    (orig - curr) / orig > 0.6   → price_drop_extreme│
-│    price <= 10                   → free_or_near_free │
+│                                                      │
 │    endDate - activation < 7d     → short_listing_duration│
 │    topAd && price < 50           → promoted_cheap_item│
 │    cashless && !cashAccepted     → no_cash_accepted  │
@@ -220,8 +221,6 @@ const RED_FLAGS = [
   // ── Rule Engine: Price ──────────────────────────────────────────
   { id: "price_drop_extreme", engine: "rule", severity: "medium",
     description: "Price drop exceeds 60% of original price" },
-  { id: "free_or_near_free", engine: "rule", severity: "high",
-    description: "Item listed for $10 or less" },
 
   // ── Rule Engine: Description (keyword/regex) ────────────────────
   { id: "urgency_language", engine: "rule", severity: "medium",
@@ -271,7 +270,7 @@ const RED_FLAGS = [
 
 | Engine | Count | Examples |
 |---|---|---|
-| `rule` (deterministic) | 12 flags | `no_images`, `seller_few_listings`, `urgency_language`, `contact_off_platform` |
+| `rule` (deterministic) | 11 flags | `no_images`, `seller_few_listings`, `urgency_language`, `contact_off_platform` |
 | `ai` (subjective) | 6 flags | `price_too_low`, `vague_description`, `description_mismatch`, `too_good_to_be_true` |
 
 ---
@@ -382,7 +381,7 @@ The AI should produce a risk score (0-100) based on weighted flag contributions:
 
 | Severity | Weight | Example Contribution |
 |---|---|---|
-| High | 20-30 points each | `contact_off_platform`, `request_deposit`, `no_images` |
+| High | 20-30 points each | `contact_off_platform`, `request_deposit`, `no_images`, `price_too_low` |
 | Medium | 10-15 points each | `urgency_language`, `vague_description`, `seller_few_listings` |
 | Low | 3-7 points each | `single_image`, `short_listing_duration`, `promoted_cheap_item` |
 

@@ -81,7 +81,7 @@ const QUIZ_BANK = [
     },
   },
   {
-    triggerIds: ["price_drop_extreme", "free_or_near_free", "price_too_low", "anchoring_bias"],
+    triggerIds: ["price_drop_extreme", "price_too_low", "anchoring_bias"],
     question: {
       id: "q_price",
       prompt: "An item normally worth $800 is listed for $200. What is the most important thing to consider?",
